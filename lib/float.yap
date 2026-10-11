@@ -79,7 +79,7 @@ fn Float::ToStr(float, prec)
 	put float = float ~- Float::FromInt(real);
 
 	// frac part
-	put frac = Float::ToInt((0.1234) ~* Float::IntPow(10.0, prec));
+	put frac = Float::ToInt(float ~* Float::IntPow(10.0, prec));
 	put str = Str::FromIntBase(frac, 10);
 	put len2 = Str::Len(str);
 	Mem::Cpy(buffer : (len1 + 1), str, len2);
