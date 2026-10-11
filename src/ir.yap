@@ -73,6 +73,7 @@ seq IR::FloatOp
 	SUB,
 	MUL,
 	DIV,
+	MOD,
 	LESSER,
 	GREATER,
 }
@@ -571,6 +572,7 @@ fn IR::AsmFloat(ctx, iter)
 	jump asm_sub ~ arg == IR::FloatOp::SUB;
 	jump asm_mul ~ arg == IR::FloatOp::MUL;
 	jump asm_div ~ arg == IR::FloatOp::DIV;
+	jump asm_mod ~ arg == IR::FloatOp::MOD;
 	jump asm_cmp ~ arg == IR::FloatOp::LESSER;
 	jump asm_cmp ~ arg == IR::FloatOp::GREATER;
 
@@ -579,6 +581,41 @@ fn IR::AsmFloat(ctx, iter)
 	lab asm_mul; IR::Push8(ctx,  89); jump done; // mulsd xmm0, xmm1
 	lab asm_div; IR::Push8(ctx,  94); jump done; // divsd xmm0, xmm1
 	lab asm_cmp; IR::Push8(ctx, 194); jump done; // cmpsd xmm0, xmm1, op
+
+	lab asm_mod;
+		// this is, unfortunately, rather complicated.
+		// this code right here, is probably the most,
+		// niche and complicated in the entire compiler.
+		//   a ~% b = trunc(a / b) * b;
+		//		divsd     xmm0, xmm1
+		//		cvttsd2si rax,  xmm0 'convert truncate scalar double to signed integer'
+		//		cvtsi2sd  xmm0, rax  'convert signed integer to scalar double'
+		//		mulsd     xmm0, xmm1
+
+		// divsd xmm0, xmm1
+		IR::Push8(ctx, 94); 
+		IR::Push8(ctx, 193);
+
+		// cvttsd2si rax, xmm0
+		IR::Push8(ctx, 242);
+		IR::PushREXW(ctx);
+		IR::Push8(ctx, 15);
+		IR::Push8(ctx, 44);
+		IR::Push8(ctx, 192);
+
+		// cvtsi2sd xmm0, rax
+		IR::Push8(ctx, 242);
+		IR::PushREXW(ctx);
+		IR::Push8(ctx, 15);
+		IR::Push8(ctx, 42);
+		IR::Push8(ctx, 192);
+
+		// mulsd xmm0, xmm1
+		IR::Push8(ctx, 242);
+		IR::Push8(ctx, 15);
+		IR::Push8(ctx, 89);
+		jump done;
+
 	lab done;
 
 	// common ModRM: 0xc1
@@ -595,7 +632,6 @@ fn IR::AsmFloat(ctx, iter)
 	lab op_lt; IR::Push8(ctx, 1);  jump op_done;
 	lab op_gt; IR::Push8(ctx, 14); jump op_done;
 	lab op_done;
-
 
 	// mov rax, xmm0
 	IR::Push8(ctx, 102); 

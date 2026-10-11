@@ -26,6 +26,7 @@ seq Ast::Expr::Op
     FSUB,
     FMUL,
     FDIV,
+    FMOD,
     FLESSER,
     FGREATER,
 }
@@ -65,6 +66,7 @@ fn Ast::Expr::OpDecode(op)
 	jump skip_FSUB     ~ Str::Diff(op, "~-"); return Ast::Expr::Op::FSUB;     lab skip_FSUB;
 	jump skip_FMUL     ~ Str::Diff(op, "~*"); return Ast::Expr::Op::FMUL;     lab skip_FMUL;
 	jump skip_FDIV     ~ Str::Diff(op, "~/"); return Ast::Expr::Op::FDIV;     lab skip_FDIV;
+	jump skip_FMOD     ~ Str::Diff(op, "~%"); return Ast::Expr::Op::FMOD;     lab skip_FMOD;
 	jump skip_FLESSER  ~ Str::Diff(op, "~<"); return Ast::Expr::Op::FLESSER;  lab skip_FLESSER;
 	jump skip_FGREATER ~ Str::Diff(op, "~>"); return Ast::Expr::Op::FGREATER; lab skip_FGREATER;
 
@@ -175,6 +177,7 @@ fn Ast::Expr::Load(node, ctx)
     jump compile_fsub     ~ op == Ast::Expr::Op::FSUB;
     jump compile_fmul     ~ op == Ast::Expr::Op::FMUL;
     jump compile_fdiv     ~ op == Ast::Expr::Op::FDIV;
+    jump compile_fmod     ~ op == Ast::Expr::Op::FMOD;
     jump compile_flesser  ~ op == Ast::Expr::Op::FLESSER;
     jump compile_fgreater ~ op == Ast::Expr::Op::FGREATER;
 
@@ -202,6 +205,7 @@ fn Ast::Expr::Load(node, ctx)
     lab compile_fsub;     IR::Emit(ctx, IR::Op::FLOAT, IR::FloatOp::SUB);     jump done;
     lab compile_fmul;     IR::Emit(ctx, IR::Op::FLOAT, IR::FloatOp::MUL);     jump done;
     lab compile_fdiv;     IR::Emit(ctx, IR::Op::FLOAT, IR::FloatOp::DIV);     jump done;
+    lab compile_fmod;     IR::Emit(ctx, IR::Op::FLOAT, IR::FloatOp::MOD);     jump done;
     lab compile_flesser;  IR::Emit(ctx, IR::Op::FLOAT, IR::FloatOp::LESSER);  jump done;
     lab compile_fgreater; IR::Emit(ctx, IR::Op::FLOAT, IR::FloatOp::GREATER); jump done;
 
