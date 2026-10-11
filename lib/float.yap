@@ -31,10 +31,15 @@ lab zero;
 
 fn Float::ToInt(float)
 {
-	put exp = (float >> 52) & ((1 << 11) - 1);
+	put exp_raw = (float >> 52) & ((1 << 11) - 1);
 	put man = (float & ((1 << 52) - 1)) | (1 << 52);
 
-	return man >> (52 - (exp - 1023));
+	put exp_shift = (52 - (exp_raw - 1023));
+	jump subnormal ~ exp_shift > 255;
+	return man >> exp_shift;
+
+lab subnormal;
+	return 0;
 }
 
 fn Float::ToSigned(float)
