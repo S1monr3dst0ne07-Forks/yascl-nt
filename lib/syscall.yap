@@ -35,6 +35,9 @@ seq SYSCALL
     GETDENTS = 78,
 
     UNLINK = 87,
+
+    CLOCK_GETTIME   = 228,
+    CLOCK_NANOSLEEP = 230,
 }
 
 
