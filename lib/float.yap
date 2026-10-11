@@ -91,10 +91,6 @@ fn Float::ToStr(float, prec)
 	put str = Str::FromIntBase(frac, 10);
 	put len = Str::Len(str);
 
-	print("prec: %d\n", [prec]);
-	print("len : %d\n", [len]);
-	print("str : %s\n", [str]);
-
 	AStr::AppendCharTimes(output, '0', prec - len);
 	AStr::AppendStr     (output, str);
 	AStr::AppendChar    (output, '\0');
