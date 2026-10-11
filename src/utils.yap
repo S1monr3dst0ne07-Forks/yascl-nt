@@ -47,7 +47,7 @@ fn Utils::Unescape(content)
 
 
 
-fn Utils::FloatEncode(real, frac)
+fn Utils::FloatEncode(real, frac, frac_len)
 {
 	// this routine is no efficient.
 	// it is implemented like this for ease of understanding.
@@ -60,9 +60,10 @@ fn Utils::FloatEncode(real, frac)
 
 	// --- step 1 scale decimal ---
 
-	// fine base 10 exponent needed to commondate all
-	// fractional digits.
-	put base10_exp = Str::Len(Str::FromIntBase(frac, 10));
+	// base 10 exponent must be big enough
+	// for frac to fit. there may be leading
+	// zero in frac so only trust frac_len!
+	put base10_exp = frac_len;
 
 	// compute scaling factor  
 	put base10_factor = 1;

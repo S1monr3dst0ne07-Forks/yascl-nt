@@ -115,10 +115,11 @@ fn Ast::Expr::FloatLiteral(node)
 	jump no ~ (left.Ast::Leaf::KIND ) != Ast::Leaf::Kind::NUMBER;
 	jump no ~ (right.Ast::Leaf::KIND) != Ast::Leaf::Kind::NUMBER;
 
-	put real = left.Ast::Leaf::VALUE;
-	put frac = right.Ast::Leaf::VALUE;
+	put real     = left.Ast::Leaf::VALUE;
+	put frac     = right.Ast::Leaf::VALUE;
+	put frac_len = right.Ast::Leaf::INT_LEN;
 
-	put value = Utils::FloatEncode(real, frac);
+	put value = Utils::FloatEncode(real, frac, frac_len);
 
 	// deallocate right hand size
 	Ast::Expr::Void(next);

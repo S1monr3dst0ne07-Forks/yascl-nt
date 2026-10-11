@@ -9,6 +9,12 @@ seq Ast::Leaf
     VALUE, // Void
     KIND,  // Ast::Leaf::Kind
 
+    // length of source identifier for integer.
+    // needed to reconstruct leading zeros
+    // for floating point literals.
+    // only set for Ast::Leaf::Kind::NUMBER!
+    INT_LEN, 
+
     INFO,  // Lex::Info
 }
 
@@ -127,9 +133,11 @@ lab call;
     );
 
 lab number;
-    return Ast::Leaf::Local::MakeLeaf(
+    put node = Ast::Leaf::Local::MakeLeaf(
         Str::ToInt(content), Ast::Leaf::Kind::NUMBER, info
     );
+    put node.Ast::Leaf::INT_LEN = Str::Len(content);
+    return node;
 
 lab meta;
     return Ast::Leaf::Local::MakeLeaf(
