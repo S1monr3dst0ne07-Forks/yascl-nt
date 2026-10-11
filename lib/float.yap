@@ -8,7 +8,7 @@
 //    haha lol." - idk, satan or smth
 
 use "lib/str.yap"
-
+use "lib/astr.yap"
 
 fn Float::FromInt(man)
 	// warning! slow!
@@ -33,9 +33,9 @@ fn Float::ToInt(float)
 {
 	put exp_raw = (float >> 52) & ((1 << 11) - 1);
 	put man = (float & ((1 << 52) - 1)) | (1 << 52);
-
 	put exp_shift = (52 - (exp_raw - 1023));
-	jump subnormal ~ exp_shift > 255;
+
+	jump subnormal ~ exp_shift > 63;
 	return man >> exp_shift;
 
 lab subnormal;
@@ -71,26 +71,35 @@ fn Float::IntPow(base, power)
 
 fn Float::ToStr(float, prec)
 {
-	static 256 ~ buffer;
+	put output = AStr::Create();
 
 	// real part
-	put real = Float::ToInt(float);
-	put str = Str::FromIntBase(real, 10);
-	put len1 = Str::Len(str);
-	Mem::Cpy(buffer, str, len1);
+	AStr::AppendStr(
+		output
+		Str::FromIntBase(
+			Float::ToInt(float),
+			10
+		),
+	);
 
 	// radix
-	put buffer.len1 = '.';
-	put float = float ~- Float::FromInt(real);
+	AStr::AppendChar(output, '.');
 
 	// frac part
-	put frac = Float::ToInt(float ~* Float::IntPow(10.0, prec));
+	put prec_scale = Float::IntPow(10.0, prec);
+	put frac = Float::ToInt((float ~% (1.0)) ~* prec_scale);
 	put str = Str::FromIntBase(frac, 10);
-	put len2 = Str::Len(str);
-	Mem::Cpy(buffer : (len1 + 1), str, len2);
+	put len = Str::Len(str);
 
-	put buffer.(len1 + len2 + 1)= '\0';
-	return buffer;
+	print("prec: %d\n", [prec]);
+	print("len : %d\n", [len]);
+	print("str : %s\n", [str]);
+
+	AStr::AppendCharTimes(output, '0', prec - len);
+	AStr::AppendStr     (output, str);
+	AStr::AppendChar    (output, '\0');
+	
+	return AStr::DetachStr(output);
 }
 
 
