@@ -12,6 +12,7 @@ seq SYSCALL
     STAT,
     FSTAT,
     
+    POLL  = 7,
     LSEEK = 8,
 
     BRK = 12,
