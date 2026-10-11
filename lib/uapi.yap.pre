@@ -86,12 +86,30 @@ seq Net::SockOption
 }
 
 seq Time::Val
-    // in user q-word format
+    // in user qword format
 {
-    SEC  = `offsetof(struct timeval, tv_sec)  >> 3`,
+    SEC  = `offsetof(struct timeval, tv_sec ) >> 3`,
     USEC = `offsetof(struct timeval, tv_usec) >> 3`,
     __last = `sizeof(struct timeval) - 1`,
 }
+
+seq Time::Spec
+	// in user qword format
+{
+	SEC  = `offsetof(struct timespec, tv_sec ) >> 3`,
+	NSEC = `offsetof(struct timespec, tv_nsec) >> 3`,
+	__last = `sizeof(struct timespec) - 1`,
+}
+
+seq Time::Clock
+{
+	MONOTONIC = `CLOCK_MONOTONIC`,
+}
+seq Time::Timer
+{
+	ABSTIME = `TIMER_ABSTIME`,
+}
+
 
 seq Sys::Errno
 {
