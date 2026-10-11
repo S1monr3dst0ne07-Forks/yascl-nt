@@ -37,6 +37,17 @@ fn Float::ToInt(float)
 	return man >> (52 - (exp - 1023));
 }
 
+fn Float::ToSigned(float)
+{
+	put sign = float >> 63;
+	put int = Float::ToInt(float);
+	jump pos ~ sign == 0;
+		put int = 0 - int;
+	lab pos;
+	return int;
+}
+
+
 fn Float::IntPow(base, power)
 {
 	jump pos ~ (power >> 63) == 0;
