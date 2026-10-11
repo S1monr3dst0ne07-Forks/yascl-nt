@@ -4,6 +4,7 @@
 #include <asm/fcntl.h>
 #include <asm/errno.h>
 #include <linux/fs.h>
+#include <linux/poll.h>
 
 #include <linux/time.h>
 #define __timeval_defined
@@ -109,6 +110,22 @@ seq Time::Timer
 {
 	ABSTIME = `TIMER_ABSTIME`,
 }
+
+
+seq Poll::Struct
+{
+	FD      = `offsetof(struct pollfd, fd)`,
+	EVENTS  = `offsetof(struct pollfd, events)`,
+	REVENTS = `offsetof(struct pollfd, revents)`,
+    __last  =   `sizeof(struct pollfd) - 1`,
+}
+
+seq Poll::Event
+{
+	POLLIN  = `POLLIN`,
+	POLLOUT = `POLLOUT`,
+}
+
 
 
 seq Sys::Errno
