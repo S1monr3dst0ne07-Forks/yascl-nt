@@ -6,11 +6,23 @@
 use "lib/str.yap"
 use "lib/io.yap"
 
-fn print(pattern, args)
+fn fprint(fd, pattern, args)
 {
     static 16384 ~ buffer;
     Str::Format(buffer, pattern, args);
-    IO::Print(buffer);
+    IO::Write(
+    	fd,
+    	buffer,
+    	Str::Len(buffer),
+    );
+}
+fn print(pattern, args)
+{
+	fprint(IO::STD::OUT, pattern, args);
+}
+fn eprint(pattern, args)
+{
+	fprint(IO::STD::ERR, pattern, args);
 }
 
 
