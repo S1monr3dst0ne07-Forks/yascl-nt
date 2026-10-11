@@ -564,6 +564,10 @@ fn IR::AsmFloat(ctx, iter)
 	IR::Push8(ctx, 110);
 	IR::Push8(ctx, 203);
 
+	// modulo does not use the common operation prefix,
+	// because it is composed from multiple instructions.
+	jump asm_mod ~ arg == IR::FloatOp::MOD;
+
 	// common prefix for operations
 	IR::Push8(ctx, 242);
 	IR::Push8(ctx, 15);
@@ -572,7 +576,6 @@ fn IR::AsmFloat(ctx, iter)
 	jump asm_sub ~ arg == IR::FloatOp::SUB;
 	jump asm_mul ~ arg == IR::FloatOp::MUL;
 	jump asm_div ~ arg == IR::FloatOp::DIV;
-	jump asm_mod ~ arg == IR::FloatOp::MOD;
 	jump asm_cmp ~ arg == IR::FloatOp::LESSER;
 	jump asm_cmp ~ arg == IR::FloatOp::GREATER;
 
@@ -586,35 +589,43 @@ fn IR::AsmFloat(ctx, iter)
 		// this is, unfortunately, rather complicated.
 		// this code right here, is probably the most,
 		// niche and complicated in the entire compiler.
-		//   a ~% b = trunc(a / b) * b;
-		//		divsd     xmm0, xmm1
-		//		cvttsd2si rax,  xmm0 'convert truncate scalar double to signed integer'
-		//		cvtsi2sd  xmm0, rax  'convert signed integer to scalar double'
-		//		mulsd     xmm0, xmm1
+		//   a ~% b = a - (trunc(a / b) * b);
 
-		// divsd xmm0, xmm1
-		IR::Push8(ctx, 94); 
-		IR::Push8(ctx, 193);
+        //   0: 66 0f 28 d0        movapd xmm2,xmm0
+        //   4: f2 0f 5e d1        divsd  xmm2,xmm1
+        //   8: 66 0f 3a 0b d2 03  roundsd xmm2,xmm2, _MM_FROUND_TO_ZERO
+        //   e: f2 0f 59 d1        mulsd  xmm2,xmm1
+        //  12: f2 0f 5c c2        subsd  xmm0,xmm2
+        //   (_MM_FROUND_TO_ZERO = 0x03)
 
-		// cvttsd2si rax, xmm0
-		IR::Push8(ctx, 242);
-		IR::PushREXW(ctx);
-		IR::Push8(ctx, 15);
-		IR::Push8(ctx, 44);
-		IR::Push8(ctx, 192);
+        IR::Push8(ctx, 102); // 0x66
+        IR::Push8(ctx, 15);  // 0x0f
+        IR::Push8(ctx, 40);  // 0x28
+        IR::Push8(ctx, 208); // 0xd0
 
-		// cvtsi2sd xmm0, rax
-		IR::Push8(ctx, 242);
-		IR::PushREXW(ctx);
-		IR::Push8(ctx, 15);
-		IR::Push8(ctx, 42);
-		IR::Push8(ctx, 192);
+        IR::Push8(ctx, 242); // 0xf2
+        IR::Push8(ctx, 15);  // 0x0f
+        IR::Push8(ctx, 94);  // 0x53
+        IR::Push8(ctx, 209); // 0xd1
 
-		// mulsd xmm0, xmm1
-		IR::Push8(ctx, 242);
-		IR::Push8(ctx, 15);
-		IR::Push8(ctx, 89);
-		jump done;
+        IR::Push8(ctx, 102); // 0x66
+        IR::Push8(ctx, 15);  // 0x0f
+        IR::Push8(ctx, 58);  // 0x3a
+        IR::Push8(ctx, 11);  // 0x0b
+        IR::Push8(ctx, 210); // 0xd2
+        IR::Push8(ctx, 03);  // 0x03
+
+        IR::Push8(ctx, 242); // 0xf2
+        IR::Push8(ctx, 15);  // 0x0f
+        IR::Push8(ctx, 89);  // 0x59
+        IR::Push8(ctx, 209); // 0xd1
+
+        IR::Push8(ctx, 242); // 0xf2
+        IR::Push8(ctx, 15);  // 0x0f
+        IR::Push8(ctx, 92);  // 0x5c
+        IR::Push8(ctx, 194); // 0x0f
+
+		jump skip_suffixing;
 
 	lab done;
 
@@ -632,6 +643,8 @@ fn IR::AsmFloat(ctx, iter)
 	lab op_lt; IR::Push8(ctx, 1);  jump op_done;
 	lab op_gt; IR::Push8(ctx, 14); jump op_done;
 	lab op_done;
+
+lab skip_suffixing;
 
 	// mov rax, xmm0
 	IR::Push8(ctx, 102); 
