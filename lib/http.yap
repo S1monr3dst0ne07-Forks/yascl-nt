@@ -32,15 +32,24 @@ seq Http::Config
     SEND_BUFFER_SIZE = 1000000,
 }
 
-
-fn Http::Recv(socket)
+fn Http::LocalRecvMore(socket)
 {
     static Http::Config::RECV_BUFFER_SIZE ~ buffer;
     put nbytes = Net::Read(socket, buffer, Http::Config::RECV_BUFFER_SIZE);
     jump error ~ Sys::Error(nbytes);
     put buffer.nbytes = '\0';
+    return buffer;
 
-    put req = Chunk::New(Http::Request);
+lab error;
+	return Mem::NULL;
+}
+
+
+fn Http::Recv(socket)
+{
+	put buffer = Http::LocalRecvMore(socket);
+    jump error ~ buffer == Mem::NULL;
+    put req    = Chunk::New(Http::Request);
 
     put method_string = buffer; put buffer = Str::Token(buffer, ' ');
     put path          = buffer; put buffer = Str::Token(buffer, ' ');
@@ -53,7 +62,7 @@ fn Http::Recv(socket)
     put req.Http::Request::PARAMS = table;
 
     lab loop;
-        jump done ~ (buffer.0) == '\0';
+        jump more ~ (buffer.0) == '\0';
         jump done ~ (buffer.0) == '\n';
         jump done ~ (buffer.0) == '\r';
 
@@ -66,6 +75,11 @@ fn Http::Recv(socket)
     lab done;
 
     return req;
+
+lab more;
+	put buffer = Http::LocalRecvMore(socket);
+    jump error ~ buffer == Mem::NULL;
+	jump loop;
 
 lab error;
     return Mem::NULL;
