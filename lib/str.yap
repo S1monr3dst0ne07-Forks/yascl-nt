@@ -136,6 +136,7 @@ fn Str::Format(buffer, pattern, args)
         put char = pattern.0; put pattern = pattern : 1;
 
         jump digits ~ char == 'd';
+        jump char   ~ char == 'c';
         jump binary ~ char == 'b';
         jump string ~ char == 's';
         jump float  ~ char == 'f';
@@ -169,6 +170,11 @@ fn Str::Format(buffer, pattern, args)
 
         jump loop;
 
+    lab char;
+    	put buffer.0 = args.0;
+    	put args   = args   : 1;
+    	put buffer = buffer : 1;
+    	jump loop;
 
     lab done;
         put buffer.0 = 0;
