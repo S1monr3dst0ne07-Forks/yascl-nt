@@ -1,6 +1,6 @@
 
 use "lib/frac.yap"
-use "lib/debug.yap"
+use "lib/io.yap"
 
 fn main()
 {
@@ -48,14 +48,14 @@ fn main()
 
                 put Iteration = Iteration + 1;
                 jump iter_loop;
-            lab iter_done_inside;   print("#"); jump iter_done;
-            lab iter_done_outside;  print(" "); jump iter_done;
+            lab iter_done_inside;   IO::Print("#"); jump iter_done;
+            lab iter_done_outside;  IO::Print(" "); jump iter_done;
             lab iter_done;
 
             put iX = iX + 1;
         jump x_loop ~ iX < iXmax;
 
-        print("\n");
+        IO::Print("\n");
         put iY = iY + 1;
     jump y_loop ~ iY < iYmax;
 
