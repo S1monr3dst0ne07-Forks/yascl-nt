@@ -202,8 +202,8 @@ class AstLeaf:
 				# load stack parameters
 				for i, param in enumerate(stack_params):
 					param.load(emit, scope)
-					addr = 32 + index * 8
-					emit("mov [rsp+{addr}], rax")
+					addr = 32 + i * 8
+					emit(f"mov [rsp+{addr}], rax")
 
 				# base pointer is set after stack parameter load
 				# to allow expressions to access local variables
@@ -213,6 +213,11 @@ class AstLeaf:
 				if name in extern_funcs: emit(f"call [{label}]")
 				else:					 emit(f"call {label}")
 
+				# remove caller stack
+				emit("mov rsp, rbp")
+				emit("pop rbp")
+				
+				# restore caller context
 				scope.restore(emit)
 
 			case 'string':
