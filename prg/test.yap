@@ -1,31 +1,32 @@
 
 
-use "lib/http.yap"
+
+bind ExitProcess   ~ "KERNEL32.DLL"
+bind WriteFile     ~ "KERNEL32.DLL"
+bind GetStdHandle  ~ "KERNEL32.DLL"
+
+//use "lib/mem.yap"
 
 fn main()
 {
-    put addr = Net::ParseAddr("0.0.0.0");
-    put port = Net::HostToNetShort(5000);
-    put server = Net::Server::Init(addr, port, 10);
+	put qstr = "hello world\n";
+    put count = 12;
 
-    jump exit ~ server == Mem::NULL;
+	static 123 ~ bstr;
+	//Mem::ToBytes(bstr, qstr, 12);
 
+    put src = qstr;
+    put dst = bstr;
+    put i = 0;
     lab loop;
-        put conn = Net::Server::Accept(server);
+        put (dst+i).0 = (src.i) & 255;
+        put i = i + 1;
+    jump loop ~ i < count;
 
-        put req = Http::Recv(conn);
+    put stdout = GetStdHandle(0 - 11);
+    WriteFile(stdout, bstr, count, 0, 0);
 
-        put string = "hello world";
-        put ht = HT::Create();
-        Http::Send(conn, ht, string, Str::Len(string));
-        HT::Void(ht);
-
-        Http::VoidReq(req);
-        Net::Close(conn);
-    jump loop;
-
-
-lab exit;
+    ExitProcess(0);
 }
 
 
