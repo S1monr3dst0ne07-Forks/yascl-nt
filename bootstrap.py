@@ -503,7 +503,7 @@ class AstFnDef:
 	@classmethod
 	def parse(cls, stream):
 		stream.expect('fn')
-		name = stream.pop().replace(':', '_')
+		name = stream.pop()
 		stream.expect('(') #)
 		
 		params = []
@@ -550,8 +550,9 @@ class AstFnDef:
 
 
 	def compile(self, emit):
-		scope = self._LocalScope(self.name, {})
-		emit(f"{self.name}:")
+		label = self.name.replace(':', '_')
+		scope = self._LocalScope(label, {})
+		emit(f"{label}:")
 
 		#allocate local parameter variables
 		regs = ABI[:len(self.params)]
