@@ -31,16 +31,6 @@ fn Dyn::CreatePopulate(size, capacity, container)
     return list;
 }
 
-fn Dyn::CreateUseChunk(container)
-{
-    put size = Chunk::Size(container);
-    return Dyn::CreatePopulate(
-        size, size, // cap = size
-        container,
-    );
-}
-
-
 fn Dyn::CreatePreAlloc(words)
 {
     return Dyn::CreatePopulate(
@@ -56,18 +46,6 @@ fn Dyn::Create()
     return Dyn::CreatePreAlloc(1);
 }
 
-
-fn Dyn::CreateCopyChunk(chunk)
-{
-    put other = Chunk::Copy(chunk);
-    return Dyn::CreateUseChunk(other);
-}
-
-
-fn Dyn::Copy(list)
-{
-    return Dyn::CreateCopyChunk(list.Dyn::CONTAINER);
-}
 
 fn Dyn::Void(list)
 {
