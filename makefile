@@ -2,7 +2,8 @@
 
 test:
 	./bootstrap.py prg/test.yap
-	FASM.EXE build.asm test.exe
+	fasm build.asm test.exe
+	wine test.exe
 
 run: stage0
 
