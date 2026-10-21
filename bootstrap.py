@@ -167,8 +167,7 @@ class AstLeaf:
 	def collect(self, scope):
 		self._resolve(scope)
 		if self.kind == 'var':
-			scope.alloc(self.value)
-			return 1
+			return scope.alloc(self.value)
 		return 0
 
 	def load(self, emit, scope): #load into rax
@@ -466,7 +465,7 @@ class AstStatic:
 	expr : AstExpr
 
 	def collect(self, scope):
-		return 0
+		return self.expr.collect(scope)
 
 	@classmethod
 	def parse(cls, stream):
@@ -569,10 +568,11 @@ class AstFnDef:
 
 
 		def alloc(self, name):
-			if name in self.vars: return
+			if name in self.vars: return 0
 
 			self.allocer += 1
 			self.vars[name] = self.allocer * WORD_SIZE
+			return 1
 
 		def __getitem__(self, name):
 			return self.vars[name]
