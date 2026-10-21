@@ -184,18 +184,9 @@ class AstLeaf:
 				quick_params  = params[:4]
 				stack_params = params[4:]
 
-				# load quick register parameters
-				regs = ABI[:len(quick_params)]
-				for param in quick_params:
-					param.load(emit, scope)
-					emit('push rax')
-				for reg in regs[::-1]:
-					emit(f"pop {reg}")
-
-				# ensure stack is aligned to next 32-byte boundary
+				# save base pointer 
 				emit("push rbp")
-				emit("mov  r10, rsp")
-				emit("and  rsp, -16")
+				emit("sub rsp, 8") # alignment placeholder
 
 				space_raw   = 0x20 + 8 * len(stack_params)
 				space_align = (space_raw + 15) & ~15
@@ -207,9 +198,19 @@ class AstLeaf:
 					addr = 32 + i * 8
 					emit(f"mov [rsp+{addr}], rax")
 
-				# base pointer is set after stack parameter load
-				# to allow expressions to access local variables
-				emit("mov rbp, r10")
+				# load quick register parameters
+				#  the effect of this on stack alignment can be ignored.
+				regs = ABI[:len(quick_params)]
+				for param in quick_params:
+					param.load(emit, scope)
+					emit('push rax')
+				for reg in regs[::-1]:
+					emit(f"pop {reg}")
+
+				# set new base pointer
+				#  this has to happen after loading the parameters
+				#  to allow them to access the local variables.
+				emit(f"lea rbp, [rsp+{space_align}]")
 
 				label = name.replace(':', '_')
 				if name in extern_funcs: emit(f"call [{label}]")
@@ -217,6 +218,7 @@ class AstLeaf:
 
 				# remove caller stack
 				emit("mov rsp, rbp")
+				emit("add rsp, 8") # alignment placeholder
 				emit("pop rbp")
 
 			case 'string':
