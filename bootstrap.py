@@ -182,15 +182,14 @@ class AstLeaf:
 				name, params = self.value
 
 				quick_params  = params[:4]
-				stack_params = params[4:]
+				stack_params  = params[4:]
+				space         = 0x20 + 8 * len(stack_params)
+				need_padding  = space % 16 == 0
 
 				# save base pointer 
 				emit("push rbp")
-				emit("sub rsp, 8") # alignment placeholder
-
-				space_raw   = 0x20 + 8 * len(stack_params)
-				space_align = (space_raw + 15) & ~15
-				emit(f"sub rsp, {space_align}")
+				if need_padding: emit("sub rsp, 8")
+				emit(f"sub rsp, {space}")
 
 				# load stack parameters
 				for i, param in enumerate(stack_params):
@@ -210,7 +209,7 @@ class AstLeaf:
 				# set new base pointer
 				#  this has to happen after loading the parameters
 				#  to allow them to access the local variables.
-				emit(f"lea rbp, [rsp+{space_align}]")
+				emit(f"lea rbp, [rsp+{space}]")
 
 				label = name.replace(':', '_')
 				if name in extern_funcs: emit(f"call [{label}]")
@@ -218,7 +217,7 @@ class AstLeaf:
 
 				# remove caller stack
 				emit("mov rsp, rbp")
-				emit("add rsp, 8") # alignment placeholder
+				if need_padding: emit("add rsp, 8")
 				emit("pop rbp")
 
 			case 'string':
