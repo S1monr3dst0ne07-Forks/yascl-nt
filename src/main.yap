@@ -63,14 +63,14 @@ fn main(argc, argv)
     put root = Ast::Prog::File(source, ctx);
     Ast::Prog::Resolve(root, ctx);
     
-    Ast::Prog::Compile(root, ctx);
-    Ctx::LinkGlobal(ctx);
-    IR::Asm(ctx);
+    //Ast::Prog::Compile(root, ctx);
+    //Ctx::LinkGlobal(ctx);
+    //IR::Asm(ctx);
 
     print("Compilation successful\n");
-    Ctx::Output(ctx, "BUILD.EXE");
+    //Ctx::Output(ctx, "BUILD.EXE");
 
-
+	  dump_ht("binds.txt" , "%s: %s\n", ctx.Ctx::Global::BINDS );
     //dump_ht("consts.txt", "%s: %d\n", ctx.Ctx::Global::CONSTS);
     //dump_heap("core");
 

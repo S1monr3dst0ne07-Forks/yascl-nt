@@ -24,9 +24,10 @@ fn Ast::Prog::Parse(stream, ctx)
         jump done ~ Lex::Done(stream);
         put content = Lex::Peek(stream);
 
-        jump fn  ~ Str::Diff(content, "fn")  == 0;
-        jump seq ~ Str::Diff(content, "seq") == 0;
-        jump use ~ Str::Diff(content, "use") == 0;
+        jump fn   ~ Str::Diff(content, "fn"  ) == 0;
+        jump seq  ~ Str::Diff(content, "seq" ) == 0;
+        jump use  ~ Str::Diff(content, "use" ) == 0;
+        jump bind ~ Str::Diff(content, "bind") == 0;
 
         put token = Lex::PeekTok(stream);
         Error::LexError(
@@ -43,6 +44,10 @@ fn Ast::Prog::Parse(stream, ctx)
     lab seq;
         Ast::Prog::ParseSeq(stream, ctx);
         jump loop;
+
+    lab bind;
+    	Ast::Prog::ParseBind(stream, ctx);
+    	jump loop;
 
     lab use;
         Lex::Expect(stream, "use");
@@ -78,6 +83,17 @@ fn Ast::Prog::File(path, ctx)
 
     Lex::VoidStream(stream);
     return root;
+}
+
+
+fn Ast::Prog::ParseBind(stream, ctx)
+{
+	Lex::Expect(stream, "bind");
+	put name = Lex::PopCheck(stream, Lex::Kind::IDEN);
+	Lex::Expect(stream, "~");
+	put lib  = Str::Copy(Lex::Pop(stream));
+
+	HT::Set(ctx.Ctx::Global::BINDS, name, lib);
 }
 
 
