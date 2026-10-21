@@ -687,17 +687,12 @@ def runtime(emit):
 
 	emit("start:")
 
-	# process parameters 
-	# system V abi, section 3.4 process init
-	# (https://web.archive.org/web/20160706074221/http://www.x86-64.org/documentation/abi.pdf)
-	#emit("mov rax, [rsp]")
-	#emit("lea rdi, [rsp+8]")
-
 	# setup calling stack frame
+	#  system calls with alignment +8 for the returns address.
+	#  we push rbp, so 8+8 = 16 which makes the alignment match again.
 	emit("push rbp")
-	emit("and  rsp, -16")
 	emit("mov  rbp, rsp")
-	emit("sub  rsp,  32")
+	emit("sub  rsp,  32") # 32 % 16 = 0
 
 	# call into main
 	emit("call main")
@@ -706,10 +701,6 @@ def runtime(emit):
 	emit("mov rsp, rbp")
 	emit("pop rbp")
 
-	# exit(0)
-	#emit("mov rdi, rax")
-	#emit("mov rax, 60")
-	#emit("syscall")
 	emit("ret")
 
 def finalize(emit):
