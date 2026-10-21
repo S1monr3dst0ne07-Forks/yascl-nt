@@ -195,7 +195,7 @@ class AstLeaf:
 				# ensure stack is aligned to next 32-byte boundary
 				emit("push rbp")
 				emit("mov  r10, rsp")
-				emit("add  rsp, -16")
+				emit("and  rsp, -16")
 
 				space_raw   = 0x20 + 8 * len(stack_params)
 				space_align = (space_raw + 15) & ~15
@@ -550,7 +550,7 @@ class AstFnDef:
 		def alloc(self, name):
 			if name in self.vars: return
 
-			self.allocer += 1 # preinc'd for rbp offset
+			self.allocer += 1
 			self.vars[name] = self.allocer * WORD_SIZE
 
 		def __getitem__(self, name):
@@ -601,9 +601,11 @@ class AstFnDef:
 		
 		# collect and allocate "real" locals
 		n_real_local = self.collect(scope)
-		emit(f"sub rsp, {n_real_local * 8}")
+		local_space = n_real_local * 8
 
+		emit(f"sub rsp, {local_space}")
 		self.body.compile(emit, scope)
+		emit(f"add rsp, {local_space}")
 
 		emit("xor rax, rax") # return null by default
 		emit("ret")
@@ -693,8 +695,8 @@ def runtime(emit):
 
 	# setup calling stack frame
 	emit("push rbp")
+	emit("and  rsp, -16")
 	emit("mov  rbp, rsp")
-	emit("add  rsp, -16")
 	emit("sub  rsp,  32")
 
 	# call into main
@@ -712,6 +714,7 @@ def runtime(emit):
 
 def finalize(emit):
 	emit("section '.data' writeable readable")
+	emit("placeholder db 0")
 
 	#emit strings
 	for label, string in strings.items():
