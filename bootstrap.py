@@ -583,19 +583,19 @@ class AstFnDef:
 		# "real" locals here) need to have additional
 		# space reserved. this also means that the order
 		# of local allocation is very very important!
+
+		# fill out caller parameter stack
+		for param in stack_params:
+			scope.alloc(param)
 		
-		# allocate and full out shadow stack space
+		# allocate and fill out shadow stack space
 		regs = ABI[:len(quick_params)]
 		for param, reg in zip(quick_params, regs):
 			scope.alloc(param)
 			emit(f'mov [rbp - {scope[param]}], {reg}')
 
 		# make sure shadow space is fully accounted for
-		scope.allocer = 4
-
-		# fill out rest
-		for param in stack_params:
-			scope.alloc(param)
+		scope.allocer += 4 - len(quick_params)
 
 		# return address
 		# don't touch me in my special stack slot!
