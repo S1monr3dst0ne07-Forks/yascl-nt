@@ -185,33 +185,34 @@ fn Ctx::VoidGlobal(ctx)
     Chunk::Void(ctx);
 }
 
+bind DeleteFileA ~ "KERNEL32.DLL"
+
 fn Ctx::Output(ctx, path)
 {
     put output = ctx.Ctx::Global::OUTPUT;
 
     // delete file, if exists
-    syscall(SYSCALL::UNLINK, FS::ConvertPath(path));
+    //DeleteFileA(FS::ConvertPath(path));
 
     // create with all perms
-    put fd = syscall(SYSCALL::OPEN
-        FS::ConvertPath(path), 
-        FS::Mode::WRONLY |
-        FS::Mode::CREATE |
-        FS::Mode::TRUNC,
-        511, // 0o777
+    static 1 ~ ofstruct;
+    put handle = OpenFile(
+    	FS::ConvertPath(path),
+    	ofstruct,
+    	FS::Mode::WRONLY | 
+    	FS::Mode::CREATE, // truncates on windows
     );
 
     put file = Chunk::New(Dyn::Size(output));
     Mem::ToBytes(file, Dyn::Ptr(output), Dyn::Size(output));
-    Sys::TryCall(
-        "Compiler Output",
-        SYSCALL::WRITE,
-        fd,
-        file,
-        Dyn::Size(output),
+    WriteFile(
+    	handle,
+    	file,
+    	Dyn::Size(output),
+    	0, 0,
     );
 
-    FS::Sys::Close(fd);
+    CloseHandle(handle);
     Chunk::Void(file);
 }
 
