@@ -395,6 +395,7 @@ class AstReturn:
 
 	def compile(self, emit, scope):
 		self.value.load(emit, scope)
+		scope.recover_stack(emit)
 		emit('ret')
 
 @dc
@@ -545,9 +546,11 @@ class AstFnDef:
 
 	@dc
 	class _LocalScope:
-		fn_name : str
-		vars : dict[str, int] #variable name to address
-		allocer : int = 0
+		fn_name     : str
+		vars        : dict[str, int] #variable name to address
+		stack_space : int = None
+		allocer     : int = 0
+
 
 		def alloc(self, name):
 			if name in self.vars: return
@@ -563,6 +566,9 @@ class AstFnDef:
 
 		def render_label(self, name):
 			return f"__local_{self.fn_name}_{name}"
+
+		def recover_stack(self, emit):
+			emit(f"add rsp, {self.stack_space}")
 
 	def collect(self, scope):
 		return self.body.collect(scope)
@@ -605,9 +611,14 @@ class AstFnDef:
 		n_real_local = self.collect(scope)
 		local_space = n_real_local * 8
 
+		# the return address misaligns the stack
+		if local_space % 16 == 0: local_space += 8
+
+		scope.stack_space = local_space
 		emit(f"sub rsp, {local_space}")
+
 		self.body.compile(emit, scope)
-		emit(f"add rsp, {local_space}")
+		scope.recover_stack(emit)
 
 		emit("xor rax, rax") # return null by default
 		emit("ret")
