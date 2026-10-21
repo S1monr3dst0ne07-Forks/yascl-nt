@@ -58,6 +58,7 @@ fn Ast::Prog::Parse(stream, ctx)
         put subprog = Ast::Prog::File(path, ctx);
         Dyn::Merge(fns, subprog.Ast::Prog::FNS);
 
+
         // functions are taken by self.
         Dyn::Void(subprog.Ast::Prog::FNS);
         Chunk::Void(subprog);
@@ -70,41 +71,8 @@ fn Ast::Prog::Parse(stream, ctx)
     return meta;
 }
 
-fn Ast::Prog::CheckFile(path)
-{
-    static FS::Struct::Stat ~ stat;
-    put status = syscall(
-        SYSCALL::STAT, 
-        FS::ConvertPath(path), 
-        stat,
-    );
-
-    jump good ~ Bool::Not(Sys::Error(status));
-    put error = 0 - status;
-
-    jump no_such_path ~ error == Sys::Errno::ENOENT;
-    jump generic_error;
-
-lab no_such_path;
-    Error::PrintError("No such path or filename: `%s`", [path]);
-lab generic_error;
-    Error::PrintError(
-        "Unable to stat path `%s`: %s", [
-        path,
-        Sys::ErrorMsg(status),
-    ]);
-lab not_readable;
-    Error::PrintError("No file `%s` is not readable", [path]);
-
-lab good;
-    put mode = (stat + FS::Struct::Stat::MODE).0;
-    jump not_readable ~ (mode & (1 << 8)) == 0;
-}
-
 fn Ast::Prog::File(path, ctx)
 {
-    Ast::Prog::CheckFile(path);
-
     put stream = Lex::Tokenize(path);
     put root = Ast::Prog::Parse(stream, ctx);
 
