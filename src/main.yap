@@ -58,26 +58,23 @@ fn main(argc, argv)
 {
 	put source = read_param();
 
-	print("source: %s\n", [source]);
-	ExitProcess(0);
-
     put ctx = Ctx::MakeGlobal();
 
     put root = Ast::Prog::File(source, ctx);
-    //Ast::Prog::Resolve(root, ctx);
-    //
-    //Ast::Prog::Compile(root, ctx);
-    //Ctx::LinkGlobal(ctx);
-    //IR::Asm(ctx);
+    Ast::Prog::Resolve(root, ctx);
+    
+    Ast::Prog::Compile(root, ctx);
+    Ctx::LinkGlobal(ctx);
+    IR::Asm(ctx);
 
-    //print("Compilation successful\n");
-
-    //Ctx::Output(ctx, opt.Options::OUTPUT);
+    print("Compilation successful\n");
+    Ctx::Output(ctx, "BUILD.EXE");
 
 
     //dump_ht("consts.txt", "%s: %d\n", ctx.Ctx::Global::CONSTS);
     //dump_heap("core");
 
+	ExitProcess(0);
 }
 
 
