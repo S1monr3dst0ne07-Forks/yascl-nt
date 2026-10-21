@@ -1,14 +1,12 @@
 
 use "lib/io.yap"
-use "lib/syscall.yap"
+
+bind ExitProcess ~ "KERNEL32.DLL"
 
 fn Error::Error(msg)
 {
     IO::Error(msg);
-    syscall(
-        SYSCALL::EXIT,
-        1,
-    );
+    ExitProcess(1);
 }
 
 
