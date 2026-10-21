@@ -691,8 +691,18 @@ def runtime(emit):
 	#emit("mov rax, [rsp]")
 	#emit("lea rdi, [rsp+8]")
 
+	# setup calling stack frame
+	emit("push rbp")
+	emit("mov  rbp, rsp")
+	emit("add  rsp, -16")
+	emit("sub  rsp,  32")
+
 	# call into main
 	emit("call main")
+
+	# restore
+	emit("mov rsp, rbp")
+	emit("pop rbp")
 
 	# exit(0)
 	#emit("mov rdi, rax")
