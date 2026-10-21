@@ -485,6 +485,22 @@ class AstStatic:
 
 
 @dc
+class AstInt:
+	
+	@classmethod
+	def parse(cls, stream):
+		stream.expect('int3')
+		stream.expect(';')
+		return cls()
+
+	def collect(self, scope): return 0
+
+	def compile(self, emit, scope):
+		emit("int3")
+		
+
+
+@dc
 class AstBlock:
 	nodes : list
 
@@ -496,6 +512,7 @@ class AstBlock:
 			case 'lab': return AstLabel.parse(stream)
 			case 'jump': return AstJump.parse(stream)
 			case 'static': return AstStatic.parse(stream)
+			case 'int3': return AstInt.parse(stream)
 
 		return AstInplace.parse(stream)
 
@@ -576,6 +593,7 @@ class AstFnDef:
 		label = self.name.replace(':', '_')
 		scope = self._LocalScope(label, {})
 		emit(f"{label}:")
+		emit(f"mov r15, '{self.name[:8]}'")
 
 		quick_params = self.params[:4]
 		stack_params = self.params[4:]
