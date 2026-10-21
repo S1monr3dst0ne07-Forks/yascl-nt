@@ -150,12 +150,8 @@ class AstLeaf:
 	def _resolve(self, scope, store=False):
 		if self.kind != 'meta': return
 
-		if	 self.value in consts: self.kind = 'const'
-		elif self.value in scope:  self.kind = 'var'
-		elif store: self.kind = 'var'
-		else:
-			print(f"Error: Unable to resolve leaf: `{self.value}`")
-			sys.exit(1)
+		if self.value in consts: self.kind = 'const'
+		else                   : self.kind = 'var'
 
 	def eval(self, scope):
 		self._resolve(scope)
@@ -165,8 +161,15 @@ class AstLeaf:
 			case 'const': return consts[self.value]
 
 			case x:
-				print(f"Unsupported compiler-time leaf: `{x}`")
+				print(f"Unsupported compiler-time leaf: `{self.value}`")
 				exit(1)
+
+	def collect(self, scope):
+		self._resolve(scope)
+		if self.kind == 'var':
+			scope.alloc(self.value)
+			return 1
+		return 0
 
 	def load(self, emit, scope): #load into rax
 		self._resolve(scope)
@@ -174,10 +177,9 @@ class AstLeaf:
 			case 'lit':	  emit(f'mov rax, {self.value}')
 			case 'char':  emit(f'mov rax, {ord(self.value)}')
 			case 'const': emit(f'mov rax, {consts[self.value]}')
-			case 'var':	  emit(f'mov rax, [vars + {scope[self.value]}]')
+			case 'var':	  emit(f'mov rax, [rbp - {scope[self.value]}]')
 			case 'call':
 				name, params = self.value
-				scope.save(emit)
 
 				quick_params  = params[:4]
 				stack_params = params[4:]
@@ -216,9 +218,6 @@ class AstLeaf:
 				# remove caller stack
 				emit("mov rsp, rbp")
 				emit("pop rbp")
-				
-				# restore caller context
-				scope.restore(emit)
 
 			case 'string':
 				label = next(fresh)
@@ -243,7 +242,7 @@ class AstLeaf:
 			sys.exit(1)
 
 		scope.alloc(self.value)
-		emit(f'mov [vars + {scope[self.value]}], rax')
+		emit(f'mov [rbp - {scope[self.value]}], rax')
 
 		
 
@@ -273,6 +272,9 @@ class AstExpr:
 		op = stream._pop()
 		right = AstExpr.parse(stream)
 		return cls(left, right, op.content, op)
+
+	def collect(self, scope):
+		return 0
 
 	def load(self, emit, scope):
 		self.right.load(emit, scope)
@@ -372,10 +374,15 @@ class AstPut:
 		self.src.load(emit, scope)
 		self.dst.store(emit, scope)
 
+	def collect(self, scope):
+		return self.dst.collect(scope)
 
 @dc
 class AstReturn:
 	value : AstExpr
+
+	def collect(self, scope):
+		return 0
 
 	@classmethod
 	def parse(cls, stream):
@@ -402,10 +409,16 @@ class AstLabel:
 	def compile(self, emit, scope):
 		emit(scope.render_label(self.name) + ':')
 
+	def collect(self, scope):
+		return 0
+
 @dc
 class AstJump:
 	target : str
 	cond   : "AstExpr | None"
+
+	def collect(self, scope):
+		return 0
 
 	@classmethod
 	def parse(cls, stream):
@@ -433,6 +446,9 @@ class AstJump:
 class AstInplace:
 	expr : AstExpr
 
+	def collect(self, scope):
+		return 0
+
 	@classmethod
 	def parse(cls, stream):
 		expr = AstExpr.parse(stream)
@@ -446,6 +462,9 @@ class AstInplace:
 class AstStatic:
 	words : AstExpr
 	expr : AstExpr
+
+	def collect(self, scope):
+		return 0
 
 	@classmethod
 	def parse(cls, stream):
@@ -493,6 +512,12 @@ class AstBlock:
 		for node in self.nodes:
 			node.compile(emit, scope)
 
+	def collect(self, scope):
+		return sum(
+			node.collect(scope)
+			for node in self.nodes
+		)
+
 
 @dc
 class AstFnDef:
@@ -525,8 +550,8 @@ class AstFnDef:
 		def alloc(self, name):
 			if name in self.vars: return
 
+			self.allocer += 1 # preinc'd for rbp offset
 			self.vars[name] = self.allocer * WORD_SIZE
-			self.allocer += 1
 
 		def __getitem__(self, name):
 			return self.vars[name]
@@ -534,33 +559,52 @@ class AstFnDef:
 		def __contains__(self, name):
 			return name in self.vars
 
-		def save(self, emit):
-			for vaddr in range(self.allocer):
-				addr = vaddr * WORD_SIZE
-				emit(f'push qword [vars + {addr}]')
-
-		def restore(self, emit):
-			for neg_vaddr in range(self.allocer):
-				vaddr = (self.allocer - 1) - neg_vaddr 
-				addr = vaddr * WORD_SIZE
-				emit(f'pop qword [vars + {addr}]')
-
 		def render_label(self, name):
 			return f"__local_{self.fn_name}_{name}"
 
+	def collect(self, scope):
+		return self.body.collect(scope)
 
 	def compile(self, emit):
 		label = self.name.replace(':', '_')
 		scope = self._LocalScope(label, {})
 		emit(f"{label}:")
 
-		#allocate local parameter variables
-		regs = ABI[:len(self.params)]
-		for param, reg in zip(self.params, regs):
+		quick_params = self.params[:4]
+		stack_params = self.params[4:]
+
+		# this code right here is very tricky.
+		# the windows calling conventions make it
+		# so that caller allocates the stack space
+		# for parameters. meaning we can use that.
+		# but the non-paramter local (i have called them
+		# "real" locals here) need to have additional
+		# space reserved. this also means that the order
+		# of local allocation is very very important!
+		
+		# allocate and full out shadow stack space
+		regs = ABI[:len(quick_params)]
+		for param, reg in zip(quick_params, regs):
 			scope.alloc(param)
-			emit(f'mov [vars + {scope[param]}], {reg}')
+			emit(f'mov [rbp - {scope[param]}], {reg}')
+
+		# make sure shadow space is fully accounted for
+		scope.allocer = 4
+
+		# fill out rest
+		for param in stack_params:
+			scope.alloc(param)
+
+		# return address
+		# don't touch me in my special stack slot!
+		scope.alloc("__return_addr_dont_touch")
+		
+		# collect and allocate "real" locals
+		n_real_local = self.collect(scope)
+		emit(f"sub rsp, {n_real_local * 8}")
 
 		self.body.compile(emit, scope)
+
 		emit("xor rax, rax") # return null by default
 		emit("ret")
 
@@ -657,10 +701,7 @@ def runtime(emit):
 	emit("ret")
 
 def finalize(emit):
-	#basic buffers
-	VAR_COUNT = 100 # concurrent local variables
 	emit("section '.data' writeable readable")
-	emit(f'vars: \n\trq {VAR_COUNT}')
 
 	#emit strings
 	for label, string in strings.items():
