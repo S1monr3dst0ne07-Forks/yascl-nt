@@ -168,7 +168,9 @@ fn Ctx::VarAlloc(ctx, name)
 
     HT::Set(vars, name, addr);
 
+	return 1; // +1 local variables
 lab already_allocated;
+	return 0; // +0 local variables
 }
 
 fn Ctx::VarLookup(ctx, name)

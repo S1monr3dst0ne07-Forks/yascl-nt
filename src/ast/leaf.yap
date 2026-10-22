@@ -345,8 +345,10 @@ fn Ast::Leaf::Collect(node, ctx)
     put value = node.Ast::Leaf::VALUE;
 
     jump not_var ~ kind != Ast::Leaf::Kind::VAR;
-        Ctx::VarAlloc(ctx, value);
-    lab not_var;
+    return Ctx::VarAlloc(ctx, value);
+
+lab not_var;
+    return 0;
 }
 
 

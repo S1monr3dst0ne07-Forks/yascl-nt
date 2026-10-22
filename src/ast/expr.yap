@@ -243,9 +243,11 @@ lab done;
 
 fn Ast::Expr::Collect(node, ctx)
 {
-    jump skip ~ (node.Ast::Expr::OP) != Ast::Expr::Op::NONE;
-        Ast::Leaf::Collect(node.Ast::Expr::LEFT, ctx);
-    lab skip;
+    jump op ~ (node.Ast::Expr::OP) != Ast::Expr::Op::NONE;
+    return Ast::Leaf::Collect(node.Ast::Expr::LEFT, ctx);
+
+lab op;
+    return 0;
 }
 
 fn Ast::Expr::Eval(node, ctx)

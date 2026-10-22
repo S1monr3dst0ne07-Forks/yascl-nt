@@ -187,23 +187,8 @@ fn Ast::FnDef::Compile(node, ctx)
 
 fn Ast::FnDef::Collect(node, ctx)
 {
-    put params = node.Ast::FnDef::PARAMS;
-    
-    // collection local variable from
-    // function parameters.
-    put i = 0;
-    lab loop;
-        jump done ~ i == Dyn::Size(params);
-
-        put param_name = Dyn::Ptr(params).i;
-        Ctx::VarAlloc(ctx, param_name);
-        
-        put i = i + 1;
-        jump loop;
-    lab done;
-
     put body = node.Ast::FnDef::BODY;
-    Ast::Block::Collect(body, ctx);
+    return Ast::Block::Collect(body, ctx);
 }
 
 fn Ast::FnDef::Void(node)

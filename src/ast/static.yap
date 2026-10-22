@@ -40,7 +40,7 @@ fn Ast::Static::Compile(node, ctx)
 
 fn Ast::Static::Collect(node, ctx)
 {
-    Ast::Expr::Collect(node.Ast::Static::EXPR, ctx);
+    return Ast::Expr::Collect(node.Ast::Static::EXPR, ctx);
 }
 
 fn Ast::Static::Void(node)

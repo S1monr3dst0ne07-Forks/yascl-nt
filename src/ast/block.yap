@@ -192,17 +192,21 @@ fn Ast::Block::CompileNode(node, ctx)
 fn Ast::Block::Collect(meta, ctx)
 {
     put nodes = meta.Ast::Block::NODES;
+    put sum = 0;
 
     put i = 0;
     lab loop;
         jump done ~ i == Dyn::Size(nodes);
 
         put node = Dyn::Ptr(nodes).i;
-        Ast::Block::CollectNode(node, ctx);
+        put n = Ast::Block::CollectNode(node, ctx);
+        put sum = sum + n;
 
         put i = i + 1;
         jump loop;
     lab done;
+
+    return sum;
 }
 
 
@@ -214,12 +218,10 @@ fn Ast::Block::CollectNode(node, ctx)
 
     jump kind_put     ~ kind == Ast::Block::Kind::PUT;
     jump kind_static  ~ kind == Ast::Block::Kind::STATIC;
-    jump done;
+	return 0;
     
-    lab kind_put;     Ast::Put::Collect(subnode, ctx);     jump done;
-    lab kind_static;  Ast::Static::Collect(subnode, ctx);  jump done;
-    
-    lab done;
+    lab kind_put;     return Ast::Put::Collect(subnode, ctx);
+    lab kind_static;  return Ast::Static::Collect(subnode, ctx);
 }
 
 

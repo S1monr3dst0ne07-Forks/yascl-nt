@@ -34,7 +34,7 @@ fn Ast::Put::Resolve(node, ctx)
 
 fn Ast::Put::Collect(node, ctx)
 {
-    Ast::Expr::Collect(node.Ast::Put::DST, ctx);
+    return Ast::Expr::Collect(node.Ast::Put::DST, ctx);
 }
 
 fn Ast::Put::Compile(node, ctx)
