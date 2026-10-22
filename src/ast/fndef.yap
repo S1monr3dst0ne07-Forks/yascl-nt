@@ -128,7 +128,7 @@ fn Ast::FnDef::Compile(node, ctx)
 		jump quick_done ~ i == Dyn::Size(quick_params);
 
 		put param_name = Dyn::Ptr(quick_params).i;
-		Ctx::VarAlloc(ctx, param); // allocate
+		Ctx::VarAlloc(ctx, param_name); // allocate
 		put param_addr = Ctx::VarLookup(ctx, param_name);
 		IR::Emit(ctx, IR::Op::LOAD_PARAM, i);
 		IR::Emit(ctx, IR::Op::STORE_LOCAL, param_addr);
@@ -142,7 +142,7 @@ fn Ast::FnDef::Compile(node, ctx)
 	// so we has to compensate for that.
 	put missing = 4 - Dyn::Size(quick_params);
 	put local_ctx.Ctx::Local::ALLOCER = 
-	    local_ctx.Ctx::Local::ALLOCER + missing;
+	   (local_ctx.Ctx::Local::ALLOCER) + missing;
 
 	// now we are at the point on the stack,
 	// where the call has happened, so we need
@@ -155,8 +155,6 @@ fn Ast::FnDef::Compile(node, ctx)
 	// stack space. we can finally collect.
 	put n_real_local = Ast::FnDef::Collect(node, ctx);
 	put local_space  = n_real_local * Config::WORD_SIZE;
-
-	print("n_real_local: %d\n", [n_real_local]);
 
 	// the stack might not be aligned after reserving local space.
 	// but in x64 the stack has to always be aligned to 16 bytes
