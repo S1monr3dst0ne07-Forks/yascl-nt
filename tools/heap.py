@@ -16,30 +16,34 @@ class Block:
 			"data" : [int(x) for x in self.data],
 		}
 
+@dc
+class Heap:
+	blocks : list[Block]
 
-def read(path):
-	fd = open('core', 'rb')
-	blocks = []
+	def lookup(self, addr):
+		for block in self.blocks:
+			if block.addr == addr:
+				return block
 
-	while True:
-		size_bytes = fd.read(4)
-		if size_bytes == b'': break
+		return None
 
-		size = int.from_bytes(size_bytes, 'little')
-		addr = int.from_bytes(fd.read(8), 'little')
+	@classmethod
+	def read(cls, path):
+		fd = open(path, 'rb')
+		blocks = []
 
-		blocks.append(Block(
-			size, addr,
-			fd.read(size)
-		))
+		while True:
+			size_bytes = fd.read(4)
+			if size_bytes == b'': break
 
-	return blocks
+			size = int.from_bytes(size_bytes, 'little')
+			addr = int.from_bytes(fd.read(8), 'little')
 
+			blocks.append(Block(
+				size, addr,
+				fd.read(size)
+			))
 
-with open('core.json', 'w') as f:
-	json.dump([
-		block.render()
-		for block in
-		read('core')
-	], f)
+		return cls(blocks)
+
 

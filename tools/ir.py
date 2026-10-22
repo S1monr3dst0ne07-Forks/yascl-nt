@@ -4,18 +4,10 @@ import sys
 from dataclasses import dataclass as dc
 from enum import Enum, auto
 
-with open('core.json', 'r') as f:
-	core = json.load(f)
+from heap import Heap
 
 head_addr = int(sys.argv[1])
-
-def lookup(addr):
-	for block in core:
-		if block["addr"] == addr:
-			return block
-
-	print(f"address {addr} not found!")
-	sys.exit(1)
+core = Heap.read('core')
 
 @dc
 class Node:
@@ -26,6 +18,9 @@ class Node:
 	next   : int
 
 class Op(Enum):
+	def _generate_next_value_(name, start, count, last_values):
+		return count
+
 	ref         = auto()
 
 	load_int    = auto()
@@ -79,21 +74,23 @@ class Op(Enum):
 
 	syscall        = auto()
 
-def qword(data):
-	word = bytes(data.pop(0) for _ in range(8))
-	return int.from_bytes(word, 'little')
-
 def read(addr):
-	node = lookup(addr)
-	data = node["data"]
-	assert node["size"] // 8 == 5;
+	node = core.lookup(addr)
+	data = node.data
+	assert node.size // 8 == 5;
+
+	def qword():
+		nonlocal data
+		value = int.from_bytes(data[:8], 'little')
+		data = data[8:]
+		return value
 
 	return Node(
-		opcode = qword(data),
-		arg    = qword(data),
-		addr   = qword(data),
-		prev   = qword(data),
-		next   = qword(data),
+		opcode = qword(),
+		arg    = qword(),
+		addr   = qword(),
+		prev   = qword(),
+		next   = qword(),
 	)
 
 def decode(addr):
@@ -101,10 +98,28 @@ def decode(addr):
 	node.opcode = Op(node.opcode)
 	return node
 
-print('-' * 10)
-root_addr = read(head_addr).next
-iter = decode(root_addr)
+def maybe_string_ptr(ptr):
+	block = core.lookup(ptr)
+	if block is None: return ptr
 
-print(iter)
+	return bytes(
+		block.data[i*8] for i in 
+		range(len(block.data) // 8)
+	)
 
+
+iter = read(head_addr)
+
+program = ""
+while True:
+	if iter.next == 0: break
+	iter = decode(iter.next)
+
+	inst = iter.opcode.name
+	arg  = maybe_string_ptr(iter.arg)
+
+	if iter.opcode == Op.ref: program += '\n'
+	program += f"{inst.ljust(15)} {arg}\n"
+
+print(program)
 
