@@ -68,49 +68,114 @@ fn Ast::FnDef::Resolve(node, ctx)
     );
 }
 
+fn Ast::FnDef::SliceParameters(params, quick_params, stack_params)
+{
+	put i = 0;
+	lab loop;
+		jump done ~ i == Dyn::Size(params);
+		put param = Dyn::Ptr(params).i;
+		put i = i + 1;
+
+		jump quick ~ i < 4;
+		jump stack;
+
+	lab quick; Dyn::Push(quick_params, param); jump loop;
+	lab stack; Dyn::Push(stack_params, param); jump loop;
+
+lab done;
+}
+
 fn Ast::FnDef::Compile(node, ctx)
 {
     put local_super_ctx = ctx.Ctx::Global::LOCAL;
     put local_ctx = Ctx::MakeLocal(node.Ast::FnDef::NAME);
     put ctx.Ctx::Global::LOCAL = local_ctx;
 
-    // collect local variables and prepare stack frame
-    Ast::FnDef::Collect(node, ctx);
-    put local_count = (local_ctx.Ctx::Local::VARS).HT::LENGTH;
-    put frame_size = local_count * Config::WORD_SIZE;
+	put params = node.Ast::FnDef::PARAMS;
+	put quick_params = Dyn::Create();
+	put stack_params = Dyn::Create();
+	Ast::FnDef::SliceParameters(params, quick_params, stack_params);
+	
+	// this code right here is very tricky.
+	// the windows calling conventions make it
+	// so that caller allocates the stack space
+	// for parameters. meaning we can use that.
+	// but the non-paramter local (i have called them
+	// "real" locals here) need to have additional
+	// space reserved. this also means that the order
+	// of local allocation is very very important!
 
-    // function entry point
-    HT::Set(
-        ctx.Ctx::Global::DEF_TABLE, // table
-        node.Ast::FnDef::NAME,      // from it's name
-        IR::Emit(ctx, IR::Op::REF), // to   it's node
-    );
+	// we mask the caller part of the stack with
+	// our variable allocationss. here, the stack
+	// paramters slot come from.
+	put i = 0;
+	lab stack_loop;
+		jump stack_done ~ i == Dyn::Size(stack_params);
 
-    IR::Emit(ctx, IR::Op::ENTER, frame_size);
+		put param = Dyn::Ptr(stack_params).i;
+		Ctx::VarAlloc(ctx, param);
 
-    // populate parameter variables.
-    put params = node.Ast::FnDef::PARAMS;
-    put i = 0;
-    lab loop;
-        jump done ~ i == Dyn::Size(params);
+		put i = i + 1;
+		jump stack_loop;
+	lab stack_done;
 
-        put param_name = Dyn::Ptr(params).i;
-        put param_addr = Ctx::VarLookup(ctx, param_name);
-        IR::Emit(ctx, IR::Op::LOAD_PARAM, i);
-        IR::Emit(ctx, IR::Op::STORE_LOCAL, param_addr);
-        
+
+	// now we do the same for the register-passing
+	// parameters and fill in the shadow space
+	// on the stack.
+	put i = 0;
+	lab quick_loop;
+		jump quick_done ~ i == Dyn::Size(quick_params);
+
+		put param_name = Dyn::Ptr(quick_params).i;
+		Ctx::VarAlloc(ctx, param); // allocate
+		put param_addr = Ctx::VarLookup(ctx, param_name);
+		IR::Emit(ctx, IR::Op::LOAD_PARAM, i);
+		IR::Emit(ctx, IR::Op::STORE_LOCAL, param_addr);
+
         put i = i + 1;
-        jump loop;
-    lab done;
-        
-    // body
-    Ast::Block::Compile(node.Ast::FnDef::BODY, ctx);
+        jump quick_loop;
+    lab quick_done;
+
+	// for functions with less than 4 parameter,
+	// the shadow space is not filled out entirely.
+	// so we has to compensate for that.
+	put missing = 4 - Dyn::Size(quick_params);
+	put local_ctx.Ctx::Local::ALLOCER = 
+	    local_ctx.Ctx::Local::ALLOCER + missing;
+
+	// now we are at the point on the stack,
+	// where the call has happened, so we need
+	// to account for the return address
+	//    "don't touch me in my speical stack slot!"
+	Ctx::VarAlloc(ctx, "__return_addr_dont_touch");
+
+	// all of the parameter variables are present now.
+	// the ALLOCER is point to the start of local
+	// stack space. we can finally collect.
+	put n_real_local = Ast::FnDef::Collect(node, ctx);
+	put local_space  = n_real_local * Config::WORD_SIZE;
+
+	print("n_real_local: %d\n", [n_real_local]);
+
+	// the stack might not be aligned after reserving local space.
+	// but in x64 the stack has to always be aligned to 16 bytes
+	// offsets.
+	put local_space = local_space + 
+	    (Config::WORD_SIZE * ((local_space % 16) == 0));
+
+	IR::Emit(ctx, IR::Op::RSP_DOWN, local_space);
+	put local_ctx.Ctx::Local::STACK_SPACE = local_space;
+
+    // actual body and stack recovery
+    Ast::Block::Compile(node.Ast::FnDef::BODY, ctx); // <--- SUB-COMPILE HERE
+    Ctx::RecoverStack(ctx);
 
     // function exit
     IR::Emit(ctx, IR::Op::LOAD_INT, 0); //default return value
     IR::Emit(ctx, IR::Op::LEAVE);
 
-    // link function scope
+    // link lab/jump pairs together
     Ctx::LinkLocal(ctx);
 
     // void subctx, restore superctx

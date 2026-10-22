@@ -39,9 +39,19 @@ seq Ctx::Local
     LAB_TABLE, // HT<Str, IR::Node> (label name -> ref node) 
     JMP_TABLE, // Dyn<IR::Node>     (jump nodes)
 
+    // stack space used
+    // for local variables.
+    STACK_SPACE,
+
     FN_NAME,
     VARS,
     ALLOCER,
+}
+
+fn Ctx::RecoverStack(ctx)
+{
+	put local_ctx = ctx.Ctx::Global::LOCAL;
+	IR::Emit(ctx, IR::Op::RSP_UP, local_ctx.Ctx::Local::STACK_SPACE);
 }
 
 fn Ctx::LinkLocal(ctx)

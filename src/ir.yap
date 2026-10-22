@@ -29,6 +29,12 @@ seq IR::Op
     LOAD_LOCAL,  // mov rax, [rbp - arg]
     STORE_LOCAL, // mov [rbp - arg], rax
 
+    // these are used in the callee
+    // to adjust the stack frame once
+    // the local variable count is known.
+    RSP_DOWN, // sub rsp, arg
+    RSP_UP  , // add rsp, arg
+
     ENTER,  // enter arg,0
     LEAVE,  // leave; ret
 
