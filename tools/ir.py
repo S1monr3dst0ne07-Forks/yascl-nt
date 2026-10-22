@@ -74,6 +74,28 @@ class Op(Enum):
 
 	syscall        = auto()
 
+has_arg = (
+	Op.ref,
+	Op.load_int,
+	Op.load_string,
+	Op.load_static,
+	Op.load_param,
+	Op.store_param,
+	Op.load_local,
+	Op.store_local,
+	Op.rsp_down,
+	Op.rsp_up,
+	Op.enter,
+	Op.leave,
+	Op.call,
+	Op.jmp,
+	Op.jnz,
+	Op.float,
+	Op.indirect_store,
+	Op.offset_store,
+	Op.syscall,
+)
+
 def read(addr):
 	node = core.lookup(addr)
 	data = node.data
@@ -116,7 +138,7 @@ while True:
 	iter = decode(iter.next)
 
 	inst = iter.opcode.name
-	arg  = maybe_string_ptr(iter.arg)
+	arg  = maybe_string_ptr(iter.arg) if iter.opcode in has_arg else ""
 
 	if iter.opcode == Op.ref: program += '\n'
 	program += f"{inst.ljust(15)} {arg}\n"
