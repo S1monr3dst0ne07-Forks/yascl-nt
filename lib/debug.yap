@@ -28,6 +28,7 @@ fn eprint(pattern, args)
 
 
 use "lib/ht.yap"
+use "lib/fs.yap"
 
 fn dump_ht(path, pattern, ht)
 {
@@ -64,6 +65,45 @@ fn dump_ht(path, pattern, ht)
 
     CloseHandle(handle);
 }
+
+
+
+bind HeapWalk ~ "KERNEL32.DLL"
+
+
+fn dump_heap(path)
+{
+    put handle = FS::Sys::Open(
+    	path, 
+
+        FS::Mode::WRONLY |
+        FS::Mode::CREATE,
+    );
+
+
+	static 100 ~ entry;
+	lab loop;
+		jump done ~ Bool::Not(HeapWalk(
+			Chunk::Handle(),
+			entry,
+		));
+
+		put data = entry.0;
+		put size = (entry.1) & ((1 << 32) - 1);
+
+		static 1 ~ size_ptr; put size_ptr.0 = size;
+		static 1 ~ data_ptr; put data_ptr.0 = data;
+		WriteFile(handle, size_ptr, 4   , 0, 0);
+		WriteFile(handle, data_ptr, 8   , 0, 0);
+		WriteFile(handle, data    , size, 0, 0);
+
+		jump loop;
+	lab done;
+
+
+	CloseHandle(handle);
+}
+
 
 
 //fn dump_buffer(path, buffer, length)
