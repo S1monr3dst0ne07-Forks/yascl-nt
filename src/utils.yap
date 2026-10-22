@@ -114,3 +114,22 @@ lab zero;
 	return 0;
 }
 
+
+
+fn Utils::SliceParameters(params, quick_params, stack_params)
+{
+	put i = 0;
+	lab loop;
+		jump done ~ i == Dyn::Size(params);
+		put param = Dyn::Ptr(params).i;
+		put i = i + 1;
+
+		jump quick ~ i < 4;
+		jump stack;
+
+	lab quick; Dyn::Push(quick_params, param); jump loop;
+	lab stack; Dyn::Push(stack_params, param); jump loop;
+
+lab done;
+}
+

@@ -68,23 +68,6 @@ fn Ast::FnDef::Resolve(node, ctx)
     );
 }
 
-fn Ast::FnDef::SliceParameters(params, quick_params, stack_params)
-{
-	put i = 0;
-	lab loop;
-		jump done ~ i == Dyn::Size(params);
-		put param = Dyn::Ptr(params).i;
-		put i = i + 1;
-
-		jump quick ~ i < 4;
-		jump stack;
-
-	lab quick; Dyn::Push(quick_params, param); jump loop;
-	lab stack; Dyn::Push(stack_params, param); jump loop;
-
-lab done;
-}
-
 fn Ast::FnDef::Compile(node, ctx)
 {
     put local_super_ctx = ctx.Ctx::Global::LOCAL;
@@ -103,7 +86,7 @@ fn Ast::FnDef::Compile(node, ctx)
 	put params = node.Ast::FnDef::PARAMS;
 	put quick_params = Dyn::Create();
 	put stack_params = Dyn::Create();
-	Ast::FnDef::SliceParameters(params, quick_params, stack_params);
+	Utils::SliceParameters(params, quick_params, stack_params);
 	
 	// this code right here is very tricky.
 	// the windows calling conventions make it
