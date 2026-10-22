@@ -3,3 +3,5 @@ FASM.EXE
 test.exe
 build.asm
 
+__pycache__
+

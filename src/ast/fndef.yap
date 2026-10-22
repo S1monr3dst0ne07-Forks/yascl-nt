@@ -91,6 +91,15 @@ fn Ast::FnDef::Compile(node, ctx)
     put local_ctx = Ctx::MakeLocal(node.Ast::FnDef::NAME);
     put ctx.Ctx::Global::LOCAL = local_ctx;
 
+    // function entry point
+    put name = node.Ast::FnDef::NAME;
+    HT::Set(
+        ctx.Ctx::Global::DEF_TABLE, // table
+        name,                             // from it's name
+        IR::Emit(ctx, IR::Op::REF, name), // to   it's node
+    );
+
+
 	put params = node.Ast::FnDef::PARAMS;
 	put quick_params = Dyn::Create();
 	put stack_params = Dyn::Create();
