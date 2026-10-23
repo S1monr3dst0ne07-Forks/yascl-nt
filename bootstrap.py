@@ -22,6 +22,8 @@ statics = {}
 bindings = {}
 extern_funcs = set()
 
+apptype = 'console'
+
 def tokenize(path):
 	with open(path) as f:
 		src = f.read()
@@ -716,6 +718,10 @@ class AstProg:
 				case 'fn': fns.append(AstFnDef.parse(stream))
 				case 'seq': cls.parse_seq(stream)
 				case 'bind': cls.parse_bind(stream)
+				case 'apptype':
+					global apptype
+					stream.pop()
+					apptype = stream.pop()
 				case 'use':
 					stream.expect('use')
 					path = stream.pop().strip('"')
@@ -742,7 +748,7 @@ class AstProg:
 
 def runtime(emit):
 	# headers
-	emit('format PE64 console')
+	emit(f'format PE64 {apptype}')
 	emit('entry start')
 	emit("section '.text' code readable executable")
 

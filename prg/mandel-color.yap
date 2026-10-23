@@ -7,6 +7,7 @@ bind ReleaseDC   ~ "USER32.DLL"
 bind ExitProcess ~ "KERNEL32.DLL"
 bind SetPixel    ~ "GDI32.DLL"
 
+apptype gui
 
 fn main()
 {
