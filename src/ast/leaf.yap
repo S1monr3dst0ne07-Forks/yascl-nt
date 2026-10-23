@@ -283,6 +283,7 @@ lab load_call;
     lab pop_loop;
         jump pop_done ~ i == 0;
         put i = i - 1;
+        IR::Emit(ctx, IR::Op::POP);
         IR::Emit(ctx, IR::Op::STORE_QUICK, i);
         jump pop_loop;
     lab pop_done;
@@ -290,7 +291,7 @@ lab load_call;
     // set new base pointer
     //  this has to happen after loading the parameters
     //  to allow them to access the local variables of the caller frame.
-    IR::Emit(ctx, IR::Op::UPDATE_RBP);
+    IR::Emit(ctx, IR::Op::UPDATE_RBP, space);
 
 	// actual call
 	jump external ~ HT::Has(ctx.Ctx::Global::BINDS, name);
@@ -302,7 +303,7 @@ lab load_call;
 
 	// remove callee stack
 	IR::Emit(ctx, IR::Op::RSP_UP, space_aligned);
-	IR::Emit(ctx, IR::Op::POP, space_aligned);
+	IR::Emit(ctx, IR::Op::POP_RBP);
 
 	jump done;
 
