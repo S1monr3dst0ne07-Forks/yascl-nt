@@ -214,7 +214,7 @@ class AstLeaf:
 				if name in extern_funcs: emit(f"call [{label}]")
 				else:					 emit(f"call {label}")
 
-				# remove caller stack
+				# remove callee stack
 				emit("mov rsp, rbp")
 				if need_padding: emit("add rsp, 8")
 				emit("pop rbp")
@@ -286,7 +286,17 @@ class AstExpr:
 			case '+': emit('add rax, rbx')
 			case '-': emit('sub rax, rbx')
 			case '.':
-				emit(f"mov rax, [rax + rbx*{WORD_SIZE}]")
+				if (
+					type(self.left)  is AstLeaf and
+					type(self.right) is AstLeaf and
+					self.left.kind  == 'lit' and
+					self.right.kind == 'lit'
+				):
+					lit = self.left.value + '.' + self.right.value
+					emit(f"mov rax, {lit}")
+					
+				else:
+					emit(f"mov rax, [rax + rbx*{WORD_SIZE}]")
 			case ':':
 				emit(f"lea rax, [rax + rbx*{WORD_SIZE}]")
 			case '==' | '!=' | '<' | '>':
@@ -314,6 +324,27 @@ class AstExpr:
 			case '<<': 
 				emit('mov rcx, rbx')
 				emit('shl rax, cl')
+
+			case '~+' | '~-' | '~*' | '~/' | '~>' | '~<' | '~%':
+				emit('movq xmm0, rax')
+				emit('movq xmm1, rbx')
+
+				match self.op:
+					case '~+': emit('addsd xmm0, xmm1')
+					case '~-': emit('subsd xmm0, xmm1')
+					case '~*': emit('mulsd xmm0, xmm1')
+					case '~/': emit('divsd xmm0, xmm1')
+					case '~>': emit('cmpsd xmm0, xmm1, 14')
+					case '~<': emit('cmpsd xmm0, xmm1, 1')
+					case '~%':
+						emit('movq xmm2, xmm0')
+						emit('divsd xmm2, xmm1')
+						emit('roundsd xmm2, xmm2, 3')
+						emit('mulsd xmm2, xmm1')
+						emit('subsd xmm0, xmm2')
+
+				emit('movq rax, xmm0')
+
 
 	def store(self, emit, scope):
 		if self.op != '.':
