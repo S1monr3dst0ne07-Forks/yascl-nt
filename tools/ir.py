@@ -21,79 +21,80 @@ class Op(Enum):
 	def _generate_next_value_(name, start, count, last_values):
 		return count
 
-	ref         = auto()
+	ref            = auto()
 
-	load_int    = auto()
-	load_string = auto()
-	load_static = auto()
-	
-	push        = auto()
-	pop         = auto()
-	push_aux    = auto()
-	pop_aux     = auto()
+	load_int       = auto()
+	load_string    = auto()
+	load_static    = auto()
 
-	load_param  = auto()
-	store_param = auto()
+	push           = auto()
+	pop            = auto()
+	push_aux       = auto()
+	pop_aux        = auto()
 
-	load_local  = auto()
-	store_local = auto()
+	push_rbp       = auto()
+	pop_rbp        = auto()
 
-	rsp_down    = auto()
-	rsp_up      = auto()
+	load_quick     = auto()
+	store_quick    = auto()
 
-	enter       = auto()
-	leave       = auto()
+	store_rsp      = auto()
+	update_rbp     = auto()
 
-	call        = auto()
-	jmp         = auto()
-	jnz         = auto()
+	rsp_down       = auto()
+	rsp_up         = auto()
 
-	add         = auto()
-	sub         = auto()
-	dot         = auto()
-	double_dot  = auto()
+	load_local     = auto()
+	store_local    = auto()
 
-	equal       = auto()
-	not_equal   = auto()
-	lesser      = auto()
-	greater     = auto()
+	ret            = auto()
+	call           = auto()
+	jmp            = auto()
+	jnz            = auto()
 
-	_mul        = auto()
-	_div        = auto()
-	_mod        = auto()
-	_and        = auto()
-	_or         = auto()
-	_xor        = auto()
-	_shr        = auto()
-	_shl        = auto()
+	call_dll       = auto()
 
-	float       = auto()
+	add            = auto()
+	sub            = auto()
+	dot            = auto()
+	double_dot     = auto()
+    
+	equal          = auto()
+	not_equal      = auto()
+	lesser         = auto()
+	greater        = auto()
+
+	_mul           = auto()
+	_div           = auto()
+	_mod           = auto()
+	_and           = auto()
+	_or            = auto()
+	_xor           = auto()
+	_shr           = auto()
+	_shl           = auto()
+
+	float          = auto()
 
 	indirect_store = auto()
 	offset_store   = auto()
-
-	syscall        = auto()
 
 has_arg = (
 	Op.ref,
 	Op.load_int,
 	Op.load_string,
 	Op.load_static,
-	Op.load_param,
-	Op.store_param,
+	Op.load_quick,
+	Op.store_quick,
 	Op.load_local,
 	Op.store_local,
 	Op.rsp_down,
 	Op.rsp_up,
-	Op.enter,
-	Op.leave,
 	Op.call,
 	Op.jmp,
 	Op.jnz,
 	Op.float,
 	Op.indirect_store,
 	Op.offset_store,
-	Op.syscall,
 )
 
 def read(addr):
@@ -137,7 +138,7 @@ while True:
 	if iter.next == 0: break
 	iter = decode(iter.next)
 
-	inst = iter.opcode.name
+	inst = iter.opcode.name.strip('_')
 	arg  = maybe_string_ptr(iter.arg) if iter.opcode in has_arg else ""
 
 	if iter.opcode == Op.ref: program += '\n'
