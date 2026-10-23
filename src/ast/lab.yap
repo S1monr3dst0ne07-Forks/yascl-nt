@@ -30,7 +30,7 @@ fn Ast::Lab::Compile(node, ctx)
     //);
 
     static 4096 ~ tmp;
-    Str::Format(tmp, "%s:%s", [
+    Str::Format(tmp, "%s/%s", [
     	local.Ctx::Local::FN_NAME, 
     	node.Ast::Lab::NAME,
     ]);
