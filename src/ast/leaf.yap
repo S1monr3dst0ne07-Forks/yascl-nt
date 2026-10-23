@@ -242,22 +242,37 @@ lab load_subexpr;
 lab load_call;
     put name   = value.Ast::Leaf::Call::NAME;
     put params = value.Ast::Leaf::Call::PARAMS;
-    put param_count = Dyn::Size(params);
 
-    jump num_param_fine ~ param_count < 8;
-        Error::LexError(
-            info,
-            "Call to function `%s` with %d parameter, only up to 7 paramters are allowed",
-            name,
-            param_count,
-        );
-    lab num_param_fine;
+	put quick_params  = Dyn::Create();
+	put stack_params  = Dyn::Create();
+	Utils::SliceParameters(params, quick_params, stack_params);
+	put space         = 32 + (8 * Dyn::Size(stack_params));
+	put need_padding  = (space % 16) == 0;
+	put space_aligned = space + (need_padding * 8);
 
-    // push call results
+	// save base pointer
+	IR::Emit(ctx, IR::Op::PUSH_RBP);
+	IR::Emit(ctx, IR::Op::RSP_DOWN, space_aligned);
+
+	// load stack parameters
+	put i = 0;
+	lab load_stack_loop;
+		jump load_stack_done ~ i == Dyn::Size(stack_params);
+		put param = Dyn::Ptr(stack_params);
+
+		put addr = 32 + (i * 8);
+        Ast::Expr::Load(param, ctx);
+		IR::Emit(ctx, IR::Op::STORE_RSP, addr);
+
+		put i = i + 1;
+		jump load_stack_loop;
+	lab load_stack_done;
+
+	// load quick register parameters
     put i = 0;
     lab push_loop;
-        jump push_done ~ i == param_count;
-        put param = Dyn::Ptr(params).i;
+        jump push_done ~ i == Dyn::Size(stack_params);
+        put param = Dyn::Ptr(stack_params).i;
         put i = i + 1;
 
         Ast::Expr::Load(param, ctx);
@@ -265,25 +280,26 @@ lab load_call;
         jump push_loop;
     lab push_done;
 
-    // pop into passing regs
     lab pop_loop;
         jump pop_done ~ i == 0;
         put i = i - 1;
-        IR::Emit(ctx, IR::Op::STORE_PARAM, i);
+        IR::Emit(ctx, IR::Op::STORE_QUICK, i);
         jump pop_loop;
     lab pop_done;
-    
-    jump syscall ~ Str::Diff(name, "syscall") == 0;
-        //actual call
-        Dyn::Push(
-            ctx.Ctx::Global::CALL_TABLE,
-            IR::Emit(ctx, IR::Op::CALL, name),
-        );
-        jump done;
 
-    lab syscall;
-        IR::Emit(ctx, IR::Op::SYSCALL);
-        jump done;
+    // set new base pointer
+    //  this has to happen after loading the parameters
+    //  to allow them to access the local variables of the caller frame.
+    IR::Emit(ctx, IR::Op::UPDATE_RBP);
+
+	IR::Emit(ctx, IR::Op::CALL, name);
+
+	// remove callee stack
+	IR::Emit(ctx, IR::Op::RSP_UP, space_aligned);
+	IR::Emit(ctx, IR::Op::POP, space_aligned);
+
+	jump done;
+
 
 lab load_string;
     IR::Emit(ctx, IR::Op::LOAD_STRING, value);

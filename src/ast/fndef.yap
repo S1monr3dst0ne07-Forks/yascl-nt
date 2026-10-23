@@ -122,7 +122,7 @@ fn Ast::FnDef::Compile(node, ctx)
 		put param_name = Dyn::Ptr(quick_params).i;
 		Ctx::VarAlloc(ctx, param_name); // allocate
 		put param_addr = Ctx::VarLookup(ctx, param_name);
-		IR::Emit(ctx, IR::Op::LOAD_PARAM, i);
+		IR::Emit(ctx, IR::Op::LOAD_QUICK, i);
 		IR::Emit(ctx, IR::Op::STORE_LOCAL, param_addr);
 
         put i = i + 1;
@@ -163,7 +163,7 @@ fn Ast::FnDef::Compile(node, ctx)
 
     // function exit
     IR::Emit(ctx, IR::Op::LOAD_INT, 0); //default return value
-    IR::Emit(ctx, IR::Op::LEAVE);
+    IR::Emit(ctx, IR::Op::RET);
 
     // link lab/jump pairs together
     Ctx::LinkLocal(ctx);

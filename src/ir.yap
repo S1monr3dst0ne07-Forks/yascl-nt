@@ -23,20 +23,26 @@ seq IR::Op
     PUSH_AUX, // push rbx
     POP_AUX,  // pop  rbx
 
-    LOAD_PARAM,  // mov rax, ABI[arg]
-    STORE_PARAM, // pop ABI[arg]
-    
+    // windows x64 calling-convention odd-ball operations
+	    PUSH_RBP, // push rbp
+	    POP_RBP,  // pop  rbp
+
+	    LOAD_QUICK,  // mov rax, QUICK[arg]
+	    STORE_QUICK, // pop QUICK[arg]
+
+	    STORE_RSP , // mov [rsp+arg], rax
+	    UPDATE_RBP, // lea rbp, [rsp+arg]
+
+	    // these are used in the callee
+	    // to adjust the stack frame once
+	    // the local variable count is known.
+	    RSP_DOWN, // sub rsp, arg
+	    RSP_UP  , // add rsp, arg
+
     LOAD_LOCAL,  // mov rax, [rbp - arg]
     STORE_LOCAL, // mov [rbp - arg], rax
 
-    // these are used in the callee
-    // to adjust the stack frame once
-    // the local variable count is known.
-    RSP_DOWN, // sub rsp, arg
-    RSP_UP  , // add rsp, arg
-
-    ENTER,  // enter arg,0
-    LEAVE,  // leave; ret
+    RET,  // ret
 
     CALL, // call arg
     JMP,  // jmp arg
@@ -300,18 +306,13 @@ lab loop;
     jump asm_load_local  ~ opcode == IR::Op::LOAD_LOCAL;
     jump asm_store_local ~ opcode == IR::Op::STORE_LOCAL;
 
-    jump asm_enter ~ opcode == IR::Op::ENTER;
-    jump asm_leave ~ opcode == IR::Op::LEAVE;
-
     jump asm_push     ~ opcode == IR::Op::PUSH;
     jump asm_pop      ~ opcode == IR::Op::POP;
     jump asm_push_aux ~ opcode == IR::Op::PUSH_AUX;
     jump asm_pop_aux  ~ opcode == IR::Op::POP_AUX;
 
-    jump asm_load_param  ~ opcode == IR::Op::LOAD_PARAM;
-    jump asm_store_param ~ opcode == IR::Op::STORE_PARAM;
-
-    jump asm_syscall ~ opcode == IR::Op::SYSCALL;
+    //jump asm_load_param  ~ opcode == IR::Op::LOAD_PARAM;
+    //jump asm_store_param ~ opcode == IR::Op::STORE_PARAM;
 
     jump asm_load_string ~ opcode == IR::Op::LOAD_STRING;
     jump asm_load_static ~ opcode == IR::Op::LOAD_STATIC;
