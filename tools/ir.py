@@ -78,25 +78,6 @@ class Op(Enum):
 	indirect_store = auto()
 	offset_store   = auto()
 
-has_arg = (
-	Op.ref,
-	Op.load_int,
-	Op.load_string,
-	Op.load_static,
-	Op.load_quick,
-	Op.store_quick,
-	Op.load_local,
-	Op.store_local,
-	Op.rsp_down,
-	Op.rsp_up,
-	Op.call,
-	Op.jmp,
-	Op.jnz,
-	Op.float,
-	Op.indirect_store,
-	Op.offset_store,
-)
-
 def read(addr):
 	node = core.lookup(addr)
 	data = node.data
@@ -121,16 +102,54 @@ def decode(addr):
 	node.opcode = Op(node.opcode)
 	return node
 
-def maybe_string_ptr(ptr):
-	block = core.lookup(ptr)
-	if block is None: return ptr
-
-	return bytes(
-		block.data[i*8] for i in 
-		range(len(block.data) // 8)
+def opcode_has_generic_arg(code):
+	return code in (
+		Op.load_int,
+		Op.load_string,
+		Op.load_static,
+		Op.load_quick,
+		Op.store_quick,
+		Op.load_local,
+		Op.store_local,
+		Op.rsp_down,
+		Op.rsp_up,
+		Op.jmp,
+		Op.jnz,
+		Op.float,
+		Op.indirect_store,
+		Op.offset_store,
 	)
 
+def render_arg(node):
+	def qstr(node=node):
+		data = core.lookup(node.arg).data
+		return bytes(
+			data[i] for i 
+			in range(0, len(data), 8)
+		).strip(b'\0').decode('ascii')
 
+	def qint():
+		return str(node.arg)
+
+	def qref(): # pointer to node
+		ref = decode(node.arg)
+		assert ref.opcode == Op.ref
+		return qstr(ref)
+
+	match node.opcode:
+		case Op.ref     : return qstr()
+		case Op.call    : return qstr()
+		case Op.call_dll: return qstr()
+		case Op.load_string: return f'"{qstr()}"'
+
+		case Op.jmp: return qref()
+		case Op.jnz: return qref()
+
+		case x if opcode_has_generic_arg(x):
+			return qint()
+
+
+print(head_addr)
 iter = read(head_addr)
 
 program = ""
@@ -138,11 +157,17 @@ while True:
 	if iter.next == 0: break
 	iter = decode(iter.next)
 
-	inst = iter.opcode.name.strip('_')
-	arg  = maybe_string_ptr(iter.arg) if iter.opcode in has_arg else ""
+	inst   = iter.opcode.name.strip('_')
+	arg    = render_arg(iter)
+	indent = "  " if iter.opcode != Op.ref else ""
 
-	if iter.opcode == Op.ref: program += '\n'
-	program += f"{inst.ljust(15)} {arg}\n"
+	if iter.opcode == Op.ref and '/' not in arg:
+		program += '\n'
+	
+	program += f"{(indent+inst).ljust(15)} {arg if arg is not None else ''}\n"
+
+with open("ir.txt", 'w') as f:
+	f.write(program)
 
 print(program)
 
