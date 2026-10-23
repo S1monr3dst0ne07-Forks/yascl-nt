@@ -1,36 +1,27 @@
 
-use "lib/x11.yap"
 use "lib/float.yap"
 use "lib/debug.yap"
 
+bind GetDC       ~ "USER32.DLL"
+bind ReleaseDC   ~ "USER32.DLL"
+bind ExitProcess ~ "KERNEL32.DLL"
+bind SetPixel    ~ "GDI32.DLL"
+
+
 fn main()
 {
-    put state = X11::OpenDisplay("/tmp/.X11-unix/X1");
-    X11::CreateGC(state);
+	put dc = GetDC(0);
 
+	put width  = 800;
+	put height = 800;
 
-    put width  = 800;
-    put height = 800;
+	mandel(dc, width, height);
 
-    put win = X11::CreateWindow(state, 200, 200, width, height);
-    X11::SelectInput(state, win, X11::Mask::EXPOSURE);
-    X11::MapWindow(state, win);
-
-
-    lab loop;
-        put event = X11::ReadEvent(state);
-        put type = (event.0) & 255;
-
-        jump again ~ type != X11::Event::EXPOSE;
-        mandel(state, win, width, height);
-
-    lab again;
-        Chunk::Void(event);
-    jump loop;
+	ReleaseDC(0, dc);
+	ExitProcess(0);
 }
 
-
-fn mandel(state, win, iXmax, iYmax)
+fn color(idx)
 {
 	put table = [
 		[66,  30,  15 ],
@@ -52,8 +43,17 @@ fn mandel(state, win, iXmax, iYmax)
 		[0,   0,   0  ],
 	];
 
+	put entry = table.idx;
+	put color = 
+		((entry.2) << 16) | 
+		((entry.1) <<  8) |
+		((entry.0)      ) ;
 
+	return color;
+}
 
+fn mandel(dc, iXmax, iYmax)
+{
     put zoom       = 2.0;
 
     put CxMin = ((0.0) ~- (2.5)) ~/ zoom;
@@ -97,11 +97,8 @@ fn mandel(state, win, iXmax, iYmax)
             put i = Iteration & 15;
             jump black ~ Iteration != IterationMax; put i = 16; lab black;
 
-            put entry = table.i;
-            X11::DrawPixel(state, win, iX, iY,
-            	entry.2, entry.1, entry.0,
-           	);
-
+            put col = color(i);
+            SetPixel(dc, iX, iY, col);
 
             put iX = iX + 1;
         jump x_loop ~ iX < iXmax;
