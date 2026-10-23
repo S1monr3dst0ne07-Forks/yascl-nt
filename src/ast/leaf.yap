@@ -258,7 +258,7 @@ lab load_call;
 	put i = 0;
 	lab load_stack_loop;
 		jump load_stack_done ~ i == Dyn::Size(stack_params);
-		put param = Dyn::Ptr(stack_params);
+		put param = Dyn::Ptr(stack_params).i;
 
 		put addr = 32 + (i * 8);
         Ast::Expr::Load(param, ctx);
