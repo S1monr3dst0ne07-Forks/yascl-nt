@@ -297,8 +297,17 @@ lab load_call;
 	jump external ~ HT::Has(ctx.Ctx::Global::BINDS, name);
 	jump internal;
 
-	lab internal; IR::Emit(ctx, IR::Op::CALL    , name); jump call_over;
-	lab external; IR::Emit(ctx, IR::Op::CALL_DLL, name); jump call_over;
+	lab internal; 
+        Dyn::Push(
+            ctx.Ctx::Global::CALL_TABLE,
+            IR::Emit(ctx, IR::Op::CALL, name),
+        );
+		jump call_over;
+
+	lab external; 
+		IR::Emit(ctx, IR::Op::CALL_DLL, name); 
+		jump call_over;
+
 	lab call_over;
 
 	// remove callee stack

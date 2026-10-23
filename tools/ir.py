@@ -137,13 +137,13 @@ def render_arg(node):
 		return qstr(ref)
 
 	match node.opcode:
-		case Op.ref     : return qstr()
-		case Op.call    : return qstr()
-		case Op.call_dll: return qstr()
+		case Op.ref        : return qstr()
+		case Op.call_dll   : return qstr()
 		case Op.load_string: return f'"{qstr()}"'
 
-		case Op.jmp: return qref()
-		case Op.jnz: return qref()
+		case Op.jmp:  return qref()
+		case Op.jnz:  return qref()
+		case Op.call: return qref()
 
 		case x if opcode_has_generic_arg(x):
 			return qint()
