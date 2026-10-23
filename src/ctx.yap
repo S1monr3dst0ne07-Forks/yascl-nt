@@ -13,17 +13,6 @@ seq Ctx::Global
     IR_ITER,  // IR::Node
     OUTPUT,   // buffer for output binary
 
-    PATCH_MAIN, // address of main call in header stub
-    PATCH_FILE_SIZE,
-    PATCH_MEM_SIZE,
-
-    // static buffers are not emitted,
-    // but the elf loader as to map space for them.
-    // hence, this is the offset between file binary size
-    // and memory binary size. (measured in bytes)
-    //  static_offset = (p_memsz - p_filesz)
-    STATIC_OFFSET,
-
     DEF_TABLE,  // HT<Str, IR::Node> (function name -> ref node)
     CALL_TABLE, // Dyn<IR::Node>     (call nodes)
 

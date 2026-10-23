@@ -204,35 +204,6 @@ fn IR::PushCompare(ctx, cond)
 
 }
 
-fn IR::PostStatic(ctx, static_nodes)
-    // static patches are keeped separate.
-    // they are computed last which allows
-    // truncation of the binary.
-    // this also makes the compiler faster,
-    // because it doesn't have to emit megabytes
-    // of zero-initialized static buffers.
-{
-    put base_ptr = IR::Addr(ctx);
-    put offset = 0;
-    put i = 0;
-
-    lab loop;
-        jump done ~ i == Dyn::Size(static_nodes);
-        put node = Dyn::Ptr(static_nodes).i;
-        put addr = node.IR::Node::ADDR;
-        put arg  = node.IR::Node::ARG;
-        put buffer_size = arg << 3;
-
-        IR::Patch64(ctx, addr, base_ptr + offset);
-
-        put i = i + 1;
-        put offset = offset + buffer_size;
-        jump loop;
-    lab done;
-
-    put ctx.Ctx::Global::STATIC_OFFSET = offset;
-}
-
 fn IR::PostPatch(ctx, patch_nodes)
     // normal patches.
 {
@@ -247,6 +218,7 @@ fn IR::PostPatch(ctx, patch_nodes)
         put addr   = node.IR::Node::ADDR;
 
         jump op_string ~ opcode == IR::Op::LOAD_STRING;
+        jump op_static ~ opcode == IR::Op::LOAD_STATIC;
         jump op_jmp    ~ opcode == IR::Op::JMP;
         jump op_jmp    ~ opcode == IR::Op::JNZ;
         jump op_call   ~ opcode == IR::Op::CALL;
@@ -266,6 +238,17 @@ fn IR::PostPatch(ctx, patch_nodes)
             IR::Patch64(ctx, addr, base_ptr);
             jump loop;
 
+        lab op_static;
+        	put base_ptr = IR::Addr(ctx);
+
+        	put i = 0;
+        	lab op_static_loop;
+        		IR::Push64(ctx, 0);
+        		put i = i + 1;
+        	jump op_static_loop ~ i < arg;
+
+        	IR::Patch64(ctx, addr, base_ptr);
+        	jump loop;
 
         lab op_jmp;
         lab op_jnz;
@@ -288,7 +271,6 @@ fn IR::Asm(ctx)
     // list of nodes to be patched,
     // during post-assemble
     put patch_nodes  = Dyn::Create();
-    put static_nodes = Dyn::Create();
 
     Tmpl::Header(ctx);
     put iter = ctx.Ctx::Global::IR_ROOT;
@@ -535,7 +517,7 @@ lab asm_load_static;
     put iter.IR::Node::ADDR = IR::Addr(ctx);
     IR::Push64(ctx, 0);
 
-    Dyn::Push(static_nodes, iter);
+    Dyn::Push(patch_nodes, iter);
     jump loop;
 
 
@@ -544,8 +526,9 @@ lab asm_float;
 	jump loop;
 
 lab done;
-    IR::PostPatch (ctx, patch_nodes);  Dyn::Void(patch_nodes);
-    IR::PostStatic(ctx, static_nodes); Dyn::Void(static_nodes);
+    IR::PostPatch (ctx, patch_nodes);
+    Dyn::Void(patch_nodes);
+
     Tmpl::Finalize(ctx);
 }
 

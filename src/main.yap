@@ -65,7 +65,7 @@ fn main(argc, argv)
     
     Ast::Prog::Compile(root, ctx);
     Ctx::LinkGlobal(ctx);
-    //IR::Asm(ctx);
+    IR::Asm(ctx);
 
     print("IR_ROOT: %d\n", [ctx.Ctx::Global::IR_ROOT]);
 
