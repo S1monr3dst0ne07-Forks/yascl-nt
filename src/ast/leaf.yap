@@ -292,7 +292,13 @@ lab load_call;
     //  to allow them to access the local variables of the caller frame.
     IR::Emit(ctx, IR::Op::UPDATE_RBP);
 
-	IR::Emit(ctx, IR::Op::CALL, name);
+	// actual call
+	jump external ~ HT::Has(ctx.Ctx::Global::BINDS, name);
+	jump internal;
+
+	lab internal; IR::Emit(ctx, IR::Op::CALL    , name); jump call_over;
+	lab external; IR::Emit(ctx, IR::Op::CALL_DLL, name); jump call_over;
+	lab call_over;
 
 	// remove callee stack
 	IR::Emit(ctx, IR::Op::RSP_UP, space_aligned);

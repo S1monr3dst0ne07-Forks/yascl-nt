@@ -43,10 +43,11 @@ seq IR::Op
     STORE_LOCAL, // mov [rbp - arg], rax
 
     RET,  // ret
-
     CALL, // call arg
     JMP,  // jmp arg
     JNZ,  // test rax, rax; jnz arg
+
+    CALL_DLL, // call [arg]
 
     ADD, // add rax, rbx
     SUB, // sub rax, rbx
@@ -75,8 +76,6 @@ seq IR::Op
 
     INDIRECT_STORE, // mov [rax], rbx
     OFFSET_STORE,   // mov [rbx + arg], rax
-
-    SYSCALL,
 }
 
 seq IR::FloatOp
