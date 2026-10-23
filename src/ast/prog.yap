@@ -79,7 +79,7 @@ fn Ast::Prog::Parse(stream, ctx)
 fn Ast::Prog::CheckFile(path)
 {
 	static 1 ~ ofstruct;
-	put handle = OpenFile(path, ofstruct, 0);
+	put handle = OpenFile(FS::ConvertPath(path), ofstruct, 0);
 	jump good ~ handle != ((0 - 1) >> 32);
 
 	Error::PrintError("No such file or path: `%s`", [path]);
