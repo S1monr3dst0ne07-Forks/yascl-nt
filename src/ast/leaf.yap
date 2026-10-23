@@ -271,8 +271,8 @@ lab load_call;
 	// load quick register parameters
     put i = 0;
     lab push_loop;
-        jump push_done ~ i == Dyn::Size(stack_params);
-        put param = Dyn::Ptr(stack_params).i;
+        jump push_done ~ i == Dyn::Size(quick_params);
+        put param = Dyn::Ptr(quick_params).i;
         put i = i + 1;
 
         Ast::Expr::Load(param, ctx);
