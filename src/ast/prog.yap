@@ -76,8 +76,19 @@ fn Ast::Prog::Parse(stream, ctx)
     return meta;
 }
 
+fn Ast::Prog::CheckFile(path)
+{
+	static 1 ~ ofstruct;
+	put handle = OpenFile(path, ofstruct, 0);
+	jump good ~ handle != ((0 - 1) >> 32);
+
+	Error::PrintError("No such file or path: `%s`", [path]);
+lab good;
+}
+
 fn Ast::Prog::File(path, ctx)
 {
+    Ast::Prog::CheckFile(path);
     put stream = Lex::Tokenize(path);
     put root = Ast::Prog::Parse(stream, ctx);
 
