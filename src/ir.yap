@@ -567,9 +567,8 @@ lab asm_float;
 	jump loop;
 
 lab done;
-    IR::PostPatch (ctx, patch_nodes);
-    Dyn::Void(patch_nodes);
-
+    IR::PostPatch (ctx, patch_nodes); Dyn::Void(patch_nodes);
+    Tmpl::ImportTable(ctx, patch_dll); Dyn::Void(patch_dll);
     Tmpl::Finalize(ctx);
 }
 

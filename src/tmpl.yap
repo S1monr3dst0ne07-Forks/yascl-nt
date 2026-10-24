@@ -139,3 +139,141 @@ fn Tmpl::Finalize(ctx)
 	IR::Patch32(ctx, 144 + Tmpl::Config::LOAD_ADDR, image_size_aligned);
 }
 
+
+fn Tmpl::ImportTable(ctx, patch_dll)
+{
+	// YE, WHO ENTER HERE!
+	//     ABANDON ALL HOPE.
+
+	put binds = ctx.Ctx::Global::BINDS;
+	
+	// patch tables. name -> patch address
+	put patch_dll_names    = HT::Create();
+	put patch_proc_names   = HT::Create(); 
+	put patch_proc_entries = HT::Create();
+
+	// build map from dll name to dll procedure names.
+	put dll_to_procs = HT::Create();
+	put it = HT::MakeIter(binds);
+	lab map_loop;
+		jump map_done ~ Bool::Not(HT::Next(it));
+		put proc_name = it.HT::Iter::KEY;
+		put dll_name  = it.HT::Iter::VALUE;
+
+		jump map_skip_create ~ HT::Has(dll_to_procs, dll_name);
+			HT::Set(dll_to_procs, dll_name, Dyn::Create());
+		lab map_skip_create;
+
+		put proc_list = HT::Get(dll_to_procs, dll_name);
+		Dyn::Push(proc_list, proc_name);
+
+		jump map_loop;
+	lab map_done;
+
+	// import table base address
+	put import_table_base = IR::Addr(ctx);
+
+	// generate import directory table
+	put it = HT::MakeIter(dll_to_procs);
+	lab dir_loop;
+		jump dir_done ~ Bool::Not(HT::Next(it));
+		put dll_name = it.HT::Iter::KEY;
+
+		IR::Push32(ctx, 0); // importLookupTableRVA = 0
+		IR::Push32(ctx, 0); // timeDateStamp 		= 0
+		IR::Push32(ctx, 0); // forwarderChain       = 0
+
+		HT::Set(patch_dll_names   , dll_name, IR::Addr(ctx));
+		IR::Push32(ctx, 0); // nameRVA               = ...
+		HT::Set(patch_proc_entries, dll_name, IR::Addr(ctx));
+		IR::Push32(ctx, 0); // importAddressTableRVA = ...
+
+		jump dir_loop;
+	lab dir_done;
+
+	// import directory table terminator
+	IR::Push32(ctx, 0);	IR::Push32(ctx, 0);	IR::Push32(ctx, 0);	IR::Push32(ctx, 0);	IR::Push32(ctx, 0);
+
+	// the import table size end here.
+	// apparently, windows uses the size to compute the number
+	// of entires, which makes no sense, but ok.
+	put import_table_size = IR::Addr(ctx) - import_table_base;
+	put import_table_rva  = import_table_base - Tmpl::Config::LOAD_ADDR;
+
+
+	// generate dll names
+	put it = HT::MakeIter(patch_dll_names);
+	lab dll_name_loop;
+		jump dll_name_done ~ Bool::Not(HT::Next(it));
+		put name_string = it.HT::Iter::KEY;
+		put patch_addr  = it.HT::Iter::VALUE;
+
+		put rva = IR::Addr(ctx) - Tmpl::Config::LOAD_ADDR;
+		IR::Patch32(ctx, patch_addr, rva);
+
+		put i = 0;
+		lab dll_name_str_loop;
+			IR::Push8(ctx, name_string.i);
+			put i = i + 1;
+		jump dll_name_str_loop ~ name_string.i;
+		IR::Push8(ctx, 0); // string terminator
+
+		jump dll_name_loop;
+	lab dll_name_done;
+	HT::Void(patch_dll_names);
+
+	// generate procedure linkage points
+	put it = HT::MakeIter(patch_proc_entries);
+	lab proc_loop;
+		jump proc_done ~ Bool::Not(HT::Next(it));
+		put dll_name   = it.HT::Iter::KEY;
+		put patch_addr = it.HT::Iter::VALUE;
+		put procs      = HT::Get(dll_to_procs, dll_name);
+
+		put rva = IR::Addr(ctx) - Tmpl::Config::LOAD_ADDR;
+		IR::Patch32(ctx, patch_addr, rva);
+
+		put i = 0;
+		lab proc_point_loop;
+			jump proc_point_done ~ i == Dyn::Size(procs);
+			put proc_name = Dyn::Ptr(procs).i;
+
+			// TODO! implement proc point linkage
+
+			HT::Set(patch_proc_names, proc_name, IR::Addr(ctx));
+			IR::Push64(ctx, 0); // to be patched...
+
+			put i = i + 1;
+			jump proc_point_loop;
+		lab proc_point_done;
+		IR::Push64(ctx, 0);
+
+		jump proc_loop;
+	lab proc_done;
+
+	// generate procedure names
+	put it = HT::MakeIter(patch_proc_names);
+	lab proc_name_loop;
+		jump proc_name_done ~ Bool::Not(HT::Next(it));
+		put name_string = it.HT::Iter::KEY;
+		put patch_addr  = it.HT::Iter::VALUE;
+
+		put rva = IR::Addr(ctx) - Tmpl::Config::LOAD_ADDR;
+		IR::Patch32(ctx, patch_addr, rva);
+
+		put i = 0;
+		IR::Push16(ctx, 0); // exportNamePtr = 0
+		lab proc_name_str_loop;
+			IR::Push8(ctx, name_string.i);
+			put i = i + 1;
+		jump proc_name_str_loop ~ name_string.i;
+		IR::Push8(ctx, 0); // string terminator
+
+		jump proc_name_loop;
+	lab proc_name_done;
+	HT::Void(patch_proc_names);
+
+	// patch import data directory entry
+	IR::Patch32(ctx, 208 + Tmpl::Config::LOAD_ADDR, import_table_rva);
+	IR::Patch32(ctx, 212 + Tmpl::Config::LOAD_ADDR, import_table_size);
+}

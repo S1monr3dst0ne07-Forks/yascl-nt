@@ -67,12 +67,10 @@ fn main(argc, argv)
     Ctx::LinkGlobal(ctx);
     IR::Asm(ctx);
 
-    print("IR_ROOT: %d\n", [ctx.Ctx::Global::IR_ROOT]);
-
     print("Compilation successful\n");
-    //Ctx::Output(ctx, "BUILD.EXE");
+    Ctx::Output(ctx, "BUILD.EXE");
 
-	dump_heap("core");
+	//dump_heap("core");
 	//dump_ht("binds.txt" , "%s: %s\n", ctx.Ctx::Global::BINDS );
     //dump_ht("consts.txt", "%s: %d\n", ctx.Ctx::Global::CONSTS);
 
