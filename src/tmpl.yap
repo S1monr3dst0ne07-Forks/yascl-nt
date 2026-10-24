@@ -68,9 +68,8 @@ fn Tmpl::Header(ctx)
 	// W - (why!?!?!!)
 	// S - system
 
-	// to be patched...
-	IR::Push32(ctx,     0); // sizeOfImage  = ...
-	IR::Push32(ctx,     0); // sizeOfHeader = ... to be computed by me, sometime
+	IR::Push32(ctx,     0); // sizeOfImage  = ... to be patched
+	IR::Push32(ctx,   512); // sizeOfHeader = 0x200
 
 	IR::Push32(ctx,       0); // checkSum            = ? (doesn't matter)
 	IR::Push16(ctx,       3); // subsystem           = IMAGE_SUBSYSTEM_WINDOWS_CUI
@@ -91,11 +90,14 @@ fn Tmpl::Header(ctx)
 	IR::Push32(ctx, 0); // size           = ...
 
 	// --- "main" section header ---
-	IR::Push8 (ctx, 'm');
-	IR::Push8 (ctx, 'a');
-	IR::Push8 (ctx, 'i');
-	IR::Push8 (ctx, 'n');
-	IR::Push32(ctx,  0 );
+	IR::Push8 (ctx, '.');
+	IR::Push8 (ctx, 't');
+	IR::Push8 (ctx, 'e');
+	IR::Push8 (ctx, 'x');
+	IR::Push8 (ctx, 't');
+	IR::Push8 (ctx,   0);
+	IR::Push8 (ctx,   0);
+	IR::Push8 (ctx,   0);
 
 	// memory and file images are the same (because i'm lazy)
 	IR::Push32(ctx,          0); // virtualSize          = ... to be patched
@@ -125,5 +127,16 @@ fn Tmpl::Header(ctx)
 
 fn Tmpl::Finalize(ctx)
 {
+	put image_size_raw    = IR::Addr(ctx) - Tmpl::Config::LOAD_ADDR;
+	put main_section_size = image_size_raw - 4096;
+
+	// patch virtualSize and sizeOfRawData
+	IR::Patch32(ctx, 224 + Tmpl::Config::LOAD_ADDR, main_section_size);
+	IR::Patch32(ctx, 232 + Tmpl::Config::LOAD_ADDR, main_section_size);
+
+	// patch sizeOfImage
+	put image_size_aligned = (image_size_raw + 4095) & (0 - 4096);
+	print("image_size_aligned: %d\n", [image_size_aligned]);
+	IR::Patch32(ctx, 144 + Tmpl::Config::LOAD_ADDR, image_size_aligned);
 }
 
