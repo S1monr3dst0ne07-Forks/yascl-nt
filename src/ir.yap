@@ -308,7 +308,7 @@ lab loop;
 		jump asm_rsp_down    ~ opcode == IR::Op::RSP_DOWN;
 		jump asm_rsp_up      ~ opcode == IR::Op::RSP_UP;
 
-    //jump asm_ret  ~ opcode == IR::Op::RET;
+    jump asm_ret  ~ opcode == IR::Op::RET;
     jump asm_call ~ opcode == IR::Op::CALL;
     jump asm_jmp  ~ opcode == IR::Op::JMP;
     jump asm_jnz  ~ opcode == IR::Op::JNZ;
@@ -335,7 +335,6 @@ lab loop;
     jump asm_indirect_store ~ opcode == IR::Op::INDIRECT_STORE;
     jump asm_offset_store   ~ opcode == IR::Op::OFFSET_STORE;
 
-	jump loop;
     Error::PrintError("INTERNAL: Invalid IR opcode %d", [opcode]);
 
 lab asm_ref;
@@ -379,6 +378,10 @@ lab asm_push_rbp;
 	jump loop;
 lab asm_pop_rbp;
 	IR::Push8(ctx, 93);
+	jump loop;
+
+lab asm_ret;
+	IR::Push8(ctx, 195);
 	jump loop;
 
 lab asm_call;
