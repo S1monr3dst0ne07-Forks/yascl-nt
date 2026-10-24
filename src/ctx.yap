@@ -16,6 +16,8 @@ seq Ctx::Global
     DEF_TABLE,  // HT<Str, IR::Node> (function name -> ref node)
     CALL_TABLE, // Dyn<IR::Node>     (call nodes)
 
+    PATCH_MAIN,
+
     PATHS,   // all included paths, prevent circular import
 
     LOCAL,   // current local compilation context 

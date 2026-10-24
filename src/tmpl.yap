@@ -122,6 +122,26 @@ fn Tmpl::Header(ctx)
 		put i = i + 1;
 	jump pad_loop ~ i < missing;
 
+	// --- entry stub at RVA 0x1000 ---
+	//	0:    55                      push   %rbp
+	//	1:    48 89 e5                mov    %rsp,%rbp
+	//	4:    48 83 ec 20             sub    $0x20,%rsp
+	//	8:    48 c7 c3 00 00 00 00    mov    $0x0,%rbx
+	//	f:    ff d3                   call   *%rbx
+	//	11:   48 89 ec                mov    %rbp,%rsp
+	//	14:   5d                      pop    %rbp
+	//	15:   c3                      ret
+
+
+	IR::Push8(ctx, 85);
+	IR::PushREXW(ctx); IR::Push8(ctx, 137); IR::Push8(ctx, 229);
+	IR::PushREXW(ctx); IR::Push8(ctx, 131); IR::Push8(ctx, 236); IR::Push8(ctx, 32);
+	put ctx.Ctx::Global::PATCH_MAIN = IR::Addr(ctx);
+    IR::PushREXW(ctx); IR::Push8(ctx, 187); put ctx.Ctx::Global::PATCH_MAIN = IR::Addr(ctx); IR::Push64(ctx, 0);
+    IR::Push8(ctx, 255); IR::Push8(ctx, 211);
+	IR::PushREXW(ctx); IR::Push8(ctx, 137); IR::Push8(ctx, 236);
+	IR::Push8(ctx, 93);
+	IR::Push8(ctx, 195);
 }
 
 
@@ -276,4 +296,11 @@ fn Tmpl::ImportTable(ctx, patch_dll)
 	// patch import data directory entry
 	IR::Patch32(ctx, 208 + Tmpl::Config::LOAD_ADDR, import_table_rva);
 	IR::Patch32(ctx, 212 + Tmpl::Config::LOAD_ADDR, import_table_size);
+
+
+	// patch entry stub call to main
+	put main_node = HT::Get(ctx.Ctx::Global::DEF_TABLE, "main");
+    put main_addr = main_node.IR::Node::ADDR; // must be REF node.
+    IR::Patch64(ctx, ctx.Ctx::Global::PATCH_MAIN, main_addr);
+
 }
