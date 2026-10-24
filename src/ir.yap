@@ -271,6 +271,7 @@ fn IR::Asm(ctx)
     // list of nodes to be patched,
     // during post-assemble
     put patch_nodes  = Dyn::Create();
+    put patch_dll    = Dyn::Create();
 
     Tmpl::Header(ctx);
     put iter = ctx.Ctx::Global::IR_ROOT;
@@ -312,6 +313,8 @@ lab loop;
     jump asm_call ~ opcode == IR::Op::CALL;
     jump asm_jmp  ~ opcode == IR::Op::JMP;
     jump asm_jnz  ~ opcode == IR::Op::JNZ;
+
+    jump asm_call_dll ~ opcode == IR::Op::CALL_DLL;
 
     jump asm_add        ~ opcode == IR::Op::ADD;
     jump asm_sub        ~ opcode == IR::Op::SUB;
@@ -409,6 +412,14 @@ lab asm_jnz;
     put iter.IR::Node::ADDR = IR::Addr(ctx);
     IR::Push32(ctx, 0); //rel32
     Dyn::Push(patch_nodes, iter);
+    jump loop;
+
+lab asm_call_dll;
+    IR::Push8(ctx, 255);
+    IR::Push8(ctx, 21); // [rip + disp32]
+    put iter.IR::Node::ADDR = IR::Addr(ctx);
+    IR::Push32(ctx, 0); //rel32;
+    Dyn::Push(patch_dll, iter);
     jump loop;
     
     
