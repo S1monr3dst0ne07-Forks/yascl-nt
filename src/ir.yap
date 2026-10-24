@@ -297,7 +297,7 @@ lab loop;
 
     // windows stuff
 		jump asm_push_rbp    ~ opcode == IR::Op::PUSH_RBP;
-//		jump asm_pop_rbp     ~ opcode == IR::Op::POP_RBP;
+		jump asm_pop_rbp     ~ opcode == IR::Op::POP_RBP;
 
 		jump asm_load_quick  ~ opcode == IR::Op::LOAD_QUICK;
 		jump asm_store_quick ~ opcode == IR::Op::STORE_QUICK;
@@ -375,10 +375,11 @@ lab asm_pop_aux;
     jump loop;
 
 lab asm_push_rbp;
-	IR::Push8(ctx, 255);
-	IR::Push8(ctx, 245);
+	IR::Push8(ctx, 85);
 	jump loop;
-
+lab asm_pop_rbp;
+	IR::Push8(ctx, 93);
+	jump loop;
 
 lab asm_call;
     IR::Push8(ctx, 232);
