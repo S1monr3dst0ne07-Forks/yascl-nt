@@ -160,7 +160,7 @@ fn Tmpl::Finalize(ctx)
 }
 
 
-fn Tmpl::ImportTable(ctx, patch_dll)
+fn Tmpl::ImportTable(ctx, patch_dll_ir_node_list)
 {
 	// YE, WHO ENTER HERE!
 	//     ABANDON ALL HOPE.
@@ -258,9 +258,9 @@ fn Tmpl::ImportTable(ctx, patch_dll)
 			jump proc_point_done ~ i == Dyn::Size(procs);
 			put proc_name = Dyn::Ptr(procs).i;
 
-			// TODO! implement proc point linkage
-
-			HT::Set(patch_proc_names, proc_name, IR::Addr(ctx));
+			put addr = IR::Addr(ctx);
+			Tmpl::PatchLinkagePoints(ctx, patch_dll_ir_node_list, proc_name, addr);
+			HT::Set(patch_proc_names, proc_name, addr);
 			IR::Push64(ctx, 0); // to be patched...
 
 			put i = i + 1;
@@ -304,3 +304,37 @@ fn Tmpl::ImportTable(ctx, patch_dll)
     IR::Patch64(ctx, ctx.Ctx::Global::PATCH_MAIN, main_addr);
 
 }
+
+
+
+fn Tmpl::PatchLinkagePoints(ctx, patch_dll_ir_node_list, proc_name, linkage_point_addr)
+{
+	// iterate over all ir nodes to be patched.
+	// if the procedure name matches, patch the call to linkage point.
+
+	// this function is terrible. it's fucking horrible.
+	// it's super super slow. i hate it.
+	// don't ever write code like this! EVER!
+	// my sins shall haunt me for the rest of eternity.
+	// do as i say not as i do, my disciples!
+
+	put i = 0;
+	lab loop;
+		jump done ~ i == Dyn::Size(patch_dll_ir_node_list);
+		put node = Dyn::Ptr(patch_dll_ir_node_list).i;
+		put i = i + 1;
+
+		put node_name = node.IR::Node::ARG;
+		jump loop ~ Str::Diff(node_name, proc_name);
+
+		put patch_addr = node.IR::Node::ADDR;
+		put rel32 = (patch_addr - linkage_point_addr) - 4;
+
+		IR::Patch32(ctx, patch_addr, rel32);
+
+		jump loop;
+	lab done;
+
+}
+
+
