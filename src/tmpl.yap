@@ -328,7 +328,7 @@ fn Tmpl::PatchLinkagePoints(ctx, patch_dll_ir_node_list, proc_name, linkage_poin
 		jump loop ~ Str::Diff(node_name, proc_name);
 
 		put patch_addr = node.IR::Node::ADDR;
-		put rel32 = (patch_addr - linkage_point_addr) - 4;
+		put rel32 = (linkage_point_addr - patch_addr) - 4;
 
 		IR::Patch32(ctx, patch_addr, rel32);
 
