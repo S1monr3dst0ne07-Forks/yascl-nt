@@ -27,7 +27,8 @@ fn Ast::Return::Resolve(node, ctx)
 fn Ast::Return::Compile(node, ctx)
 {
     Ast::Expr::Load(node.Ast::Return::VALUE, ctx);
-    //IR::Emit(ctx, IR::Op::LEAVE);
+    Ctx::RecoverStack(ctx);
+    IR::Emit(ctx, IR::Op::RET);
 }
 
 fn Ast::Return::Void(node)
