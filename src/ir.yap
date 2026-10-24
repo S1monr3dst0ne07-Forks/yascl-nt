@@ -491,7 +491,7 @@ lab asm_store_quick;
     Error::Error("PANIC: INTERNAL ERROR, DO NOT RUN EXECUTABLE");
 
     lab asm_store_quick_rcx; IR::Push8(ctx, 89); jump loop;
-    lab asm_store_quick_rdx; IR::Push8(ctx, 91); jump loop;
+    lab asm_store_quick_rdx; IR::Push8(ctx, 90); jump loop;
 
     lab asm_store_quick_r8 ; IR::Push8(ctx, 88); jump loop;
     lab asm_store_quick_r9 ; IR::Push8(ctx, 89); jump loop;
