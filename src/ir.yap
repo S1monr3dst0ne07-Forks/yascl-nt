@@ -302,11 +302,11 @@ lab loop;
 		jump asm_load_quick  ~ opcode == IR::Op::LOAD_QUICK;
 		jump asm_store_quick ~ opcode == IR::Op::STORE_QUICK;
 
-//		jump asm_store_rsp   ~ opcode == IR::Op::STORE_RSP;
-//		jump asm_update_rbp  ~ opcode == IR::Op::UPDATE_RBP;
-//
-//		jump asm_rsp_down    ~ opcode == IR::Op::RSP_DOWN;
-//		jump asm_rsp_up      ~ opcode == IR::Op::RSP_UP;
+		jump asm_store_rsp   ~ opcode == IR::Op::STORE_RSP;
+		jump asm_update_rbp  ~ opcode == IR::Op::UPDATE_RBP;
+
+		jump asm_rsp_down    ~ opcode == IR::Op::RSP_DOWN;
+		jump asm_rsp_up      ~ opcode == IR::Op::RSP_UP;
 
     //jump asm_ret  ~ opcode == IR::Op::RET;
     jump asm_call ~ opcode == IR::Op::CALL;
@@ -481,6 +481,36 @@ lab asm_store_quick;
 
     lab asm_store_quick_r8 ; IR::Push8(ctx, 88); jump loop;
     lab asm_store_quick_r9 ; IR::Push8(ctx, 89); jump loop;
+
+
+lab asm_store_rsp;
+	IR::PushREXW(ctx);
+	IR::Push8 (ctx, 137);
+	IR::Push8 (ctx, 132);
+	IR::Push8 (ctx,  36);
+	IR::Push32(ctx, arg);
+	jump loop;
+
+lab asm_update_rbp;
+	IR::PushREXW(ctx);
+	IR::Push8 (ctx, 141);
+	IR::Push8 (ctx, 172);
+	IR::Push8 (ctx,  36);
+	IR::Push32(ctx, arg);
+	jump loop;
+
+lab asm_rsp_down;
+	IR::PushREXW(ctx);
+	IR::Push8 (ctx, 129);
+	IR::Push8 (ctx, 236);
+	IR::Push32(ctx, arg);
+	jump loop;
+lab asm_rsp_up;
+	IR::PushREXW(ctx);
+	IR::Push8 (ctx, 129);
+	IR::Push8 (ctx, 196);
+	IR::Push32(ctx, arg);
+	jump loop;
 
 lab asm_indirect_store;
     IR::PushREXW(ctx);
