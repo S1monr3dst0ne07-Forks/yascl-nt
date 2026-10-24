@@ -284,6 +284,9 @@ lab loop;
     jump asm_ref      ~ opcode == IR::Op::REF;
 
     jump asm_load_int ~ opcode == IR::Op::LOAD_INT;
+    jump asm_load_string ~ opcode == IR::Op::LOAD_STRING;
+    jump asm_load_static ~ opcode == IR::Op::LOAD_STATIC;
+
     jump asm_load_local  ~ opcode == IR::Op::LOAD_LOCAL;
     jump asm_store_local ~ opcode == IR::Op::STORE_LOCAL;
 
@@ -292,15 +295,20 @@ lab loop;
     jump asm_push_aux ~ opcode == IR::Op::PUSH_AUX;
     jump asm_pop_aux  ~ opcode == IR::Op::POP_AUX;
 
-    //jump asm_load_param  ~ opcode == IR::Op::LOAD_PARAM;
-    //jump asm_store_param ~ opcode == IR::Op::STORE_PARAM;
+    // windows stuff
+		jump asm_push_rbp    ~ opcode == IR::Op::PUSH_RBP;
+//		jump asm_pop_rbp     ~ opcode == IR::Op::POP_RBP;
 
-    jump asm_load_string ~ opcode == IR::Op::LOAD_STRING;
-    jump asm_load_static ~ opcode == IR::Op::LOAD_STATIC;
+		jump asm_load_quick  ~ opcode == IR::Op::LOAD_QUICK;
+		jump asm_store_quick ~ opcode == IR::Op::STORE_QUICK;
 
-    jump asm_indirect_store ~ opcode == IR::Op::INDIRECT_STORE;
-    jump asm_offset_store   ~ opcode == IR::Op::OFFSET_STORE;
+//		jump asm_store_rsp   ~ opcode == IR::Op::STORE_RSP;
+//		jump asm_update_rbp  ~ opcode == IR::Op::UPDATE_RBP;
+//
+//		jump asm_rsp_down    ~ opcode == IR::Op::RSP_DOWN;
+//		jump asm_rsp_up      ~ opcode == IR::Op::RSP_UP;
 
+    //jump asm_ret  ~ opcode == IR::Op::RET;
     jump asm_call ~ opcode == IR::Op::CALL;
     jump asm_jmp  ~ opcode == IR::Op::JMP;
     jump asm_jnz  ~ opcode == IR::Op::JNZ;
@@ -324,6 +332,10 @@ lab loop;
 
     jump asm_float      ~ opcode == IR::Op::FLOAT;
 
+    jump asm_indirect_store ~ opcode == IR::Op::INDIRECT_STORE;
+    jump asm_offset_store   ~ opcode == IR::Op::OFFSET_STORE;
+
+	jump loop;
     Error::PrintError("INTERNAL: Invalid IR opcode %d", [opcode]);
 
 lab asm_ref;
@@ -349,17 +361,6 @@ lab asm_store_local;
     IR::Push32(ctx, (1 << 32) - arg);
     jump loop;
 
-lab asm_enter;
-    IR::Push8(ctx, 200); // 0xC8 -> enter
-    IR::Push16(ctx, arg); // low byte
-    IR::Push8(ctx, 0);   // zero-nested
-    jump loop;
-
-lab asm_leave;
-    IR::Push8(ctx, 201); // 0xC9 -> leave
-    IR::Push8(ctx, 195); // 0xC3 -> near return
-    jump loop;
-
 lab asm_push;
     IR::Push8(ctx, 80); // 0x50 -> push rax
     jump loop;
@@ -372,6 +373,12 @@ lab asm_push_aux;
 lab asm_pop_aux;
     IR::Push8(ctx, 91); // 0x5b -> pop rbx
     jump loop;
+
+lab asm_push_rbp;
+	IR::Push8(ctx, 255);
+	IR::Push8(ctx, 245);
+	jump loop;
+
 
 lab asm_call;
     IR::Push8(ctx, 232);
@@ -447,43 +454,32 @@ lab asm_shl;
     IR::PushREXW(ctx); IR::Push8(ctx, 211); IR::Push8(ctx, 224); // shl rax, cl
     jump loop;
 
-lab asm_load_param;
-    jump loop               ~ arg == 0; // mov rax, rax -> noop
-    jump asm_load_param_rdi ~ arg == 1;
-    jump asm_load_param_rsi ~ arg == 2;
-    jump asm_load_param_rdx ~ arg == 3;
-    jump asm_load_param_r10 ~ arg == 4;
-    jump asm_load_param_r8 ~ arg  == 5;
-    jump asm_load_param_r9 ~ arg  == 6;
+lab asm_load_quick;
+    jump asm_load_quick_rcx ~ arg == 0;
+    jump asm_load_quick_rdx ~ arg == 1;
+    jump asm_load_quick_r8  ~ arg == 2;
+    jump asm_load_quick_r9  ~ arg == 3;
     Error::Error("PANIC: INTERNAL ERROR, DO NOT RUN EXECUTABLE");
 
-    lab asm_load_param_rdi; IR::Push8(ctx, 72); IR::Push8(ctx, 137); IR::Push8(ctx, 248); jump loop;
-    lab asm_load_param_rsi; IR::Push8(ctx, 72); IR::Push8(ctx, 137); IR::Push8(ctx, 240); jump loop;
-    lab asm_load_param_rdx; IR::Push8(ctx, 72); IR::Push8(ctx, 137); IR::Push8(ctx, 208); jump loop;
-    lab asm_load_param_r10; IR::Push8(ctx, 76); IR::Push8(ctx, 137); IR::Push8(ctx, 208); jump loop;
-    lab asm_load_param_r8 ; IR::Push8(ctx, 76); IR::Push8(ctx, 137); IR::Push8(ctx, 192); jump loop;
-    lab asm_load_param_r9 ; IR::Push8(ctx, 76); IR::Push8(ctx, 137); IR::Push8(ctx, 200); jump loop;
+    lab asm_load_quick_rcx; IR::Push8(ctx, 72); IR::Push8(ctx, 137); IR::Push8(ctx, 192); jump loop;
+    lab asm_load_quick_rdx; IR::Push8(ctx, 72); IR::Push8(ctx, 137); IR::Push8(ctx, 192); jump loop;
+    lab asm_load_quick_r8 ; IR::Push8(ctx, 76); IR::Push8(ctx, 137); IR::Push8(ctx, 192); jump loop;
+    lab asm_load_quick_r9 ; IR::Push8(ctx, 76); IR::Push8(ctx, 137); IR::Push8(ctx, 192); jump loop;
 
-lab asm_store_param;
-    jump asm_store_param_rax ~ arg == 0;
-    jump asm_store_param_rdi ~ arg == 1;
-    jump asm_store_param_rsi ~ arg == 2;
-    jump asm_store_param_rdx ~ arg == 3;
+lab asm_store_quick;
+    jump asm_store_quick_rcx ~ arg == 0;
+    jump asm_store_quick_rdx ~ arg == 1;
 
     IR::Push8(ctx, 65);
-    jump asm_store_param_r10 ~ arg == 4;
-    jump asm_store_param_r8 ~ arg  == 5;
-    jump asm_store_param_r9 ~ arg  == 6;
+    jump asm_store_quick_r8 ~ arg == 2;
+    jump asm_store_quick_r9 ~ arg == 3;
     Error::Error("PANIC: INTERNAL ERROR, DO NOT RUN EXECUTABLE");
 
-    lab asm_store_param_rax; IR::Push8(ctx, 88); jump loop;
-    lab asm_store_param_rdi; IR::Push8(ctx, 95); jump loop;
-    lab asm_store_param_rsi; IR::Push8(ctx, 94); jump loop;
-    lab asm_store_param_rdx; IR::Push8(ctx, 90); jump loop;
+    lab asm_store_quick_rcx; IR::Push8(ctx, 89); jump loop;
+    lab asm_store_quick_rdx; IR::Push8(ctx, 91); jump loop;
 
-    lab asm_store_param_r10; IR::Push8(ctx, 90); jump loop;
-    lab asm_store_param_r8 ; IR::Push8(ctx, 88); jump loop;
-    lab asm_store_param_r9 ; IR::Push8(ctx, 89); jump loop;
+    lab asm_store_quick_r8 ; IR::Push8(ctx, 88); jump loop;
+    lab asm_store_quick_r9 ; IR::Push8(ctx, 89); jump loop;
 
 lab asm_indirect_store;
     IR::PushREXW(ctx);

@@ -283,7 +283,6 @@ lab load_call;
     lab pop_loop;
         jump pop_done ~ i == 0;
         put i = i - 1;
-        IR::Emit(ctx, IR::Op::POP);
         IR::Emit(ctx, IR::Op::STORE_QUICK, i);
         jump pop_loop;
     lab pop_done;

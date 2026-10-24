@@ -136,7 +136,6 @@ fn Tmpl::Finalize(ctx)
 
 	// patch sizeOfImage
 	put image_size_aligned = (image_size_raw + 4095) & (0 - 4096);
-	print("image_size_aligned: %d\n", [image_size_aligned]);
 	IR::Patch32(ctx, 144 + Tmpl::Config::LOAD_ADDR, image_size_aligned);
 }
 
