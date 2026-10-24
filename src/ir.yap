@@ -476,10 +476,10 @@ lab asm_load_quick;
     jump asm_load_quick_r9  ~ arg == 3;
     Error::Error("PANIC: INTERNAL ERROR, DO NOT RUN EXECUTABLE");
 
-    lab asm_load_quick_rcx; IR::Push8(ctx, 72); IR::Push8(ctx, 137); IR::Push8(ctx, 192); jump loop;
-    lab asm_load_quick_rdx; IR::Push8(ctx, 72); IR::Push8(ctx, 137); IR::Push8(ctx, 192); jump loop;
+    lab asm_load_quick_rcx; IR::Push8(ctx, 72); IR::Push8(ctx, 137); IR::Push8(ctx, 200); jump loop;
+    lab asm_load_quick_rdx; IR::Push8(ctx, 72); IR::Push8(ctx, 137); IR::Push8(ctx, 208); jump loop;
     lab asm_load_quick_r8 ; IR::Push8(ctx, 76); IR::Push8(ctx, 137); IR::Push8(ctx, 192); jump loop;
-    lab asm_load_quick_r9 ; IR::Push8(ctx, 76); IR::Push8(ctx, 137); IR::Push8(ctx, 192); jump loop;
+    lab asm_load_quick_r9 ; IR::Push8(ctx, 76); IR::Push8(ctx, 137); IR::Push8(ctx, 200); jump loop;
 
 lab asm_store_quick;
     jump asm_store_quick_rcx ~ arg == 0;
