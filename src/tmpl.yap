@@ -35,8 +35,7 @@ fn Tmpl::Header(ctx)
 	IR::Push32(ctx,     0); // timeDateStamp        = 0
 	IR::Push32(ctx,     0); // pointerToSymbolTable = 0
 	IR::Push32(ctx,     0); // numberOfSymbol       = 0
-	IR::Push16(ctx,   128); // sizeOfOptionalHeader = 128 
-							// (only export and import data entries are included)
+	IR::Push16(ctx,   240); // sizeOfOptionalHeader = 240 (all entires)
 	IR::Push16(ctx,    47); // 0x2f, copied from fasm, idk, should work
 
 	// --- PE64 "optional" header ---
@@ -79,7 +78,7 @@ fn Tmpl::Header(ctx)
 	IR::Push64(ctx, 1000000); // sizeOfHeapReserve   = 1 MB
 	IR::Push64(ctx,    4096); // sizeOfHeapCommit    = 4 KB
 	IR::Push32(ctx,       0); // loaderFlags         = 0
-	IR::Push32(ctx,       2); // numberOfRvaAndSizes = 2 (number of follwing entries)
+	IR::Push32(ctx,      16); // numberOfRvaAndSizes = 16
 
 	// exportTableEntry, not present
 	IR::Push32(ctx, 0); // virtualAddress = 0
@@ -88,6 +87,21 @@ fn Tmpl::Header(ctx)
 	// importTableEntry, to be patched...
 	IR::Push32(ctx, 0); // virtualAddress = ...
 	IR::Push32(ctx, 0); // size           = ...
+
+	IR::Push64(ctx, 0); // resource
+	IR::Push64(ctx, 0); // exception
+	IR::Push64(ctx, 0); // certificate
+	IR::Push64(ctx, 0); // base relocation
+	IR::Push64(ctx, 0); // debug
+	IR::Push64(ctx, 0); // architecture
+	IR::Push64(ctx, 0); // global ptr
+	IR::Push64(ctx, 0); // tls
+	IR::Push64(ctx, 0); // load config
+	IR::Push64(ctx, 0); // bound import
+	IR::Push64(ctx, 0); // iat
+	IR::Push64(ctx, 0); // delay import description
+	IR::Push64(ctx, 0); // clr runtime header
+	IR::Push64(ctx, 0); // reserved
 
 	// --- "main" section header ---
 	IR::Push8 (ctx, '.');
@@ -152,8 +166,8 @@ fn Tmpl::Finalize(ctx)
 
 	// patch virtualSize and sizeOfRawData
 	put main_section_size_aligned = (main_section_size + 511) & (0 - 512);
-	IR::Patch32(ctx, 224 + Tmpl::Config::LOAD_ADDR, main_section_size);
-	IR::Patch32(ctx, 232 + Tmpl::Config::LOAD_ADDR, main_section_size_aligned);
+	IR::Patch32(ctx, 112 + 224 + Tmpl::Config::LOAD_ADDR, main_section_size);
+	IR::Patch32(ctx, 112 + 232 + Tmpl::Config::LOAD_ADDR, main_section_size_aligned);
 
 	// patch sizeOfImage
 	put image_size_aligned = (image_size_raw + 4095) & (0 - 4096);
