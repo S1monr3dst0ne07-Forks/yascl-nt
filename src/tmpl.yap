@@ -151,12 +151,22 @@ fn Tmpl::Finalize(ctx)
 	put main_section_size = image_size_raw - 4096;
 
 	// patch virtualSize and sizeOfRawData
+	put main_section_size_aligned = (main_section_size + 511) & (0 - 512);
 	IR::Patch32(ctx, 224 + Tmpl::Config::LOAD_ADDR, main_section_size);
-	IR::Patch32(ctx, 232 + Tmpl::Config::LOAD_ADDR, main_section_size);
+	IR::Patch32(ctx, 232 + Tmpl::Config::LOAD_ADDR, main_section_size_aligned);
 
 	// patch sizeOfImage
 	put image_size_aligned = (image_size_raw + 4095) & (0 - 4096);
 	IR::Patch32(ctx, 144 + Tmpl::Config::LOAD_ADDR, image_size_aligned);
+
+	// pad to next 0x200 file alignment boundary
+	put i = IR::Addr(ctx) - Tmpl::Config::LOAD_ADDR;
+	lab pad_loop;
+		jump pad_done ~ (i & 511) == 0;
+		IR::Push8(ctx, 0);
+		put i = i + 1;
+		jump pad_loop;
+	lab pad_done;
 }
 
 
