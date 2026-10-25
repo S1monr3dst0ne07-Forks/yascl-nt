@@ -24,10 +24,11 @@ fn Ast::Prog::Parse(stream, ctx)
         jump done ~ Lex::Done(stream);
         put content = Lex::Peek(stream);
 
-        jump fn   ~ Str::Diff(content, "fn"  ) == 0;
-        jump seq  ~ Str::Diff(content, "seq" ) == 0;
-        jump use  ~ Str::Diff(content, "use" ) == 0;
-        jump bind ~ Str::Diff(content, "bind") == 0;
+        jump fn      ~ Str::Diff(content, "fn"     ) == 0;
+        jump seq     ~ Str::Diff(content, "seq"    ) == 0;
+        jump use     ~ Str::Diff(content, "use"    ) == 0;
+        jump bind    ~ Str::Diff(content, "bind"   ) == 0;
+        jump apptype ~ Str::Diff(content, "apptype") == 0;
 
         put token = Lex::PeekTok(stream);
         Error::LexError(
@@ -48,6 +49,17 @@ fn Ast::Prog::Parse(stream, ctx)
     lab bind;
     	Ast::Prog::ParseBind(stream, ctx);
     	jump loop;
+
+    lab apptype;
+        Lex::Expect(stream, "apptype");
+        put type = Lex::Pop(stream);
+
+        jump apptype_cui ~ Str::Diff(type, "console") == 0;
+        jump apptype_gui ~ Str::Diff(type, "gui"    ) == 0;
+		jump loop;
+
+		lab apptype_cui; put ctx.Ctx::Global::APPTYPE = 3; jump loop;
+		lab apptype_gui; put ctx.Ctx::Global::APPTYPE = 2; jump loop;
 
     lab use;
         Lex::Expect(stream, "use");

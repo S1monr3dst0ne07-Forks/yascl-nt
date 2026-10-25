@@ -71,7 +71,8 @@ fn Tmpl::Header(ctx)
 	IR::Push32(ctx,   512); // sizeOfHeader = 0x200
 
 	IR::Push32(ctx,       0); // checkSum            = ? (doesn't matter)
-	IR::Push16(ctx,       3); // subsystem           = IMAGE_SUBSYSTEM_WINDOWS_CUI
+	IR::Push16(ctx, ctx.Ctx::Global::APPTYPE,
+	                       ); // subsystem           = APPTYPE
 	IR::Push16(ctx,       0); // dllCharacteristics  = 0
 	IR::Push64(ctx, 1000000); // sizeOfStackReserve  = 1 MB
 	IR::Push64(ctx,    4096); // sizeOfStackCommit   = 4 KB
