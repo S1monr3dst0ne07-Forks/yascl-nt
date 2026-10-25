@@ -1,0 +1,32 @@
+
+@ECHO OFF
+
+:: stage zero
+BOOT.EXE src/main.yap
+REN BUILD.EXE ZERO.EXE
+
+:: stage one
+ZERO.EXE src/main.yap
+REN BUILD.EXE ONE.EXE
+
+:: stage two
+ONE.EXE src/main.yap
+REN BUILD.EXE TWO.EXE
+
+:: compare
+FC TWO.EXE ONE.EXE
+
+IF %ERRORLEVEL% == 0 (
+	COPY TWO.EXE YASCL.EXE 
+	CLS
+	ECHO COMPILER VALID
+) ELSE (
+	CLS
+	ECHO COMPILER INVALID
+)
+
+DEL ZERO.EXE
+DEL ONE.EXE
+DEL TWO.EXE
+
+
