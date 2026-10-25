@@ -46,7 +46,7 @@ fn Tmpl::Header(ctx)
 	IR::Push32(ctx,     0); // sizeOfInitializedData       = ?
 	IR::Push32(ctx,     0); // sizeOfUninitializedData     = ?
 	IR::Push32(ctx,  4096); // addressOfEntryPoint         = 0x1000
-	IR::Push32(ctx,  4096); // baseOfCode                  = 0x1000
+	IR::Push32(ctx,     0); // baseOfCode                  = ?
 	IR::Push64(ctx,  Tmpl::Config::LOAD_ADDR
 						 ); // imageBase                   = load address
 	IR::Push32(ctx,  4096); // sectionAlignment            = 0x1000
@@ -55,7 +55,7 @@ fn Tmpl::Header(ctx)
 	IR::Push16(ctx,     0); // minorOperatingSystemVersion = 0
 	IR::Push16(ctx,     0); // majorImageVersion           = 0
 	IR::Push16(ctx,     0); // minorImageVersion           = 0
-	IR::Push16(ctx,     0); // majorSubsystemVersion       = 0
+	IR::Push16(ctx,     6); // majorSubsystemVersion       = 6
 	IR::Push16(ctx,     0); // minorSubsystemVersion       = 0
 	IR::Push32(ctx,     0); // win32VersionValue           = 0
 
