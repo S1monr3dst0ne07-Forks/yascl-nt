@@ -5,6 +5,7 @@
 
 use "lib/str.yap"
 use "lib/io.yap"
+use "lib/win.yap"
 
 fn fprint(fd, pattern, args)
 {
@@ -53,11 +54,10 @@ fn dump_ht(path, pattern, ht)
         put char_count = Str::Len(qbuffer);
         Mem::ToBytes(bbuffer, qbuffer, char_count);
 
-        WriteFile(
+        Win::WriteFile(
         	handle,
         	bbuffer,
         	char_count,
-        	0, 0,
         );
 
         jump loop;
@@ -93,9 +93,9 @@ fn dump_heap(path)
 
 		static 1 ~ size_ptr; put size_ptr.0 = size;
 		static 1 ~ data_ptr; put data_ptr.0 = data;
-		WriteFile(handle, size_ptr, 4   , 0, 0);
-		WriteFile(handle, data_ptr, 8   , 0, 0);
-		WriteFile(handle, data    , size, 0, 0);
+		Win::WriteFile(handle, size_ptr, 4   );
+		Win::WriteFile(handle, data_ptr, 8   );
+		Win::WriteFile(handle, data    , size);
 
 		jump loop;
 	lab done;

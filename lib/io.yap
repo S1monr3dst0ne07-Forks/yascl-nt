@@ -2,6 +2,7 @@
 
 use "lib/chunk.yap"
 use "lib/str.yap"
+use "lib/win.yap"
 
 bind WriteFile     ~ "KERNEL32.DLL"
 bind GetStdHandle  ~ "KERNEL32.DLL"
@@ -16,7 +17,7 @@ fn IO::Write(handle, qstr, len)
     // syscall are slow anyways.
     put bstr = Chunk::New(len);
     Mem::ToBytes(bstr, qstr, len);
-    WriteFile(handle, bstr, len, 0, 0);
+    Win::WriteFile(handle, bstr, len);
     Chunk::Void(bstr);
 }
 

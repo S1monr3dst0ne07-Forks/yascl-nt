@@ -1,9 +1,9 @@
 
 use "lib/chunk.yap"
 use "lib/bool.yap"
+use "lib/win.yap"
 
 bind OpenFile    ~ "KERNEL32.DLL"
-bind ReadFile    ~ "KERNEL32.DLL"
 bind GetFileSize ~ "KERNEL32.DLL"
 bind CloseHandle ~ "KERNEL32.DLL"
 
@@ -45,12 +45,10 @@ fn FS::Read(path)
     put bfile = Chunk::New(size); 
     put qfile = Chunk::New(size);
 
-    ReadFile(
+    Win::ReadFile(
     	handle,
     	bfile,
     	size,
-    	Mem::NULL,
-    	Mem::NULL,
     );
 
     Mem::FromBytes(qfile, bfile, size);

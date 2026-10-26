@@ -214,11 +214,10 @@ fn Ctx::Output(ctx, path)
 
     put file = Chunk::New(Dyn::Size(output));
     Mem::ToBytes(file, Dyn::Ptr(output), Dyn::Size(output));
-    WriteFile(
+    Win::WriteFile(
     	handle,
     	file,
     	Dyn::Size(output),
-    	0, 0,
     );
 
     CloseHandle(handle);
