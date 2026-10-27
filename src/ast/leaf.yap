@@ -35,6 +35,7 @@ seq Ast::Leaf::Kind
     ARRAY,
     CHAR,
     SUBEXPR,
+    FN_PTR,
 }
 
 
@@ -62,11 +63,18 @@ fn Ast::Leaf::Parse(stream)
 
     jump char_lit  ~ tok_kind == Lex::Kind::SINGLE_QUOTE;
     jump string    ~ tok_kind == Lex::Kind::DOUBLE_QUOTE;
-    jump sub_expr  ~ Str::Diff(content, "(") == 0;
-    jump array     ~ Str::Diff(content, "[") == 0;
-    jump call      ~ Str::Diff(next, "(") == 0;
+    jump sub_expr  ~ Str::Diff(content, "(")  == 0;
+    jump array     ~ Str::Diff(content, "[")  == 0;
+    jump fn_ptr    ~ Str::Diff(content,  "@") == 0;
+    jump call      ~ Str::Diff(next, "(")     == 0;
     jump number    ~ Str::IsNumber(content);
     jump meta;
+
+lab fn_ptr;
+    put name = Str::Copy(Lex::Pop(stream));
+    return Ast::Leaf::Local::MakeLeaf(
+        name, Ast::Leaf::Kind::FN_PTR, info, 
+    );
 
 lab sub_expr;
     put expr = Ast::Expr::Parse(stream);
@@ -218,7 +226,15 @@ fn Ast::Leaf::Load(node, ctx)
     jump load_string    ~ kind == Ast::Leaf::Kind::STRING;
     jump load_array     ~ kind == Ast::Leaf::Kind::ARRAY;
     jump load_char      ~ kind == Ast::Leaf::Kind::CHAR;
+    jump load_fn_ptr    ~ kind == Ast::Leaf::Kind::FN_PTR;
     Error::LexError(info, "Internal error: meta node while Ast::Leaf::Load");
+    jump done;
+
+lab load_fn_ptr;
+    Dyn::Push(
+        ctx.Ctx::Global::CALL_TABLE,
+        IR::Emit(ctx, IR::Op::LOAD_FN_PTR, value),
+    );
     jump done;
 
 lab load_char;   

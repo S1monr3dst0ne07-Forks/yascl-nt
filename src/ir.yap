@@ -17,6 +17,7 @@ seq IR::Op
     LOAD_INT,    // mov rax, arg
     LOAD_STRING, // mov rax, "arg"
     LOAD_STATIC, // mov rax, sizeof(arg)
+    LOAD_FN_PTR, // mov rax, @arg
 
     PUSH,     // push rax
     POP,      // pop  rax
@@ -219,9 +220,11 @@ fn IR::PostPatch(ctx, patch_nodes)
 
         jump op_string ~ opcode == IR::Op::LOAD_STRING;
         jump op_static ~ opcode == IR::Op::LOAD_STATIC;
-        jump op_jmp    ~ opcode == IR::Op::JMP;
-        jump op_jmp    ~ opcode == IR::Op::JNZ;
-        jump op_call   ~ opcode == IR::Op::CALL;
+
+        jump op_rel ~ opcode == IR::Op::LOAD_FN_PTR;
+        jump op_rel ~ opcode == IR::Op::JMP;
+        jump op_rel ~ opcode == IR::Op::JNZ;
+        jump op_rel ~ opcode == IR::Op::CALL;
         jump loop;
 
         lab op_string;
@@ -250,9 +253,7 @@ fn IR::PostPatch(ctx, patch_nodes)
         	IR::Patch64(ctx, addr, base_ptr);
         	jump loop;
 
-        lab op_jmp;
-        lab op_jnz;
-        lab op_call;
+        lab op_rel;
             // subtract 4 for the rel32 value itself.
             // 4 * 8 = 32.
 
@@ -260,7 +261,6 @@ fn IR::PostPatch(ctx, patch_nodes)
             put offset = (target_addr - addr) - 4;
             IR::Patch32(ctx, addr, offset);
             jump loop;
-
 
         jump loop;
     lab done;
@@ -287,6 +287,7 @@ lab loop;
     jump asm_load_int ~ opcode == IR::Op::LOAD_INT;
     jump asm_load_string ~ opcode == IR::Op::LOAD_STRING;
     jump asm_load_static ~ opcode == IR::Op::LOAD_STATIC;
+    jump asm_load_fn_ptr ~ opcode == IR::Op::LOAD_FN_PTR;
 
     jump asm_load_local  ~ opcode == IR::Op::LOAD_LOCAL;
     jump asm_store_local ~ opcode == IR::Op::STORE_LOCAL;
@@ -561,6 +562,15 @@ lab asm_load_static;
     Dyn::Push(patch_nodes, iter);
     jump loop;
 
+lab asm_load_fn_ptr;
+    IR::PushREXW(ctx);
+    IR::Push8(ctx, 141);
+    IR::Push8(ctx, 5);
+    put iter.IR::Node::ADDR = IR::Addr(ctx);
+    IR::Push32(ctx, 0);
+
+    Dyn::Push(patch_nodes, iter);
+    jump loop;
 
 lab asm_float;
 	IR::AsmFloat(ctx, iter);
