@@ -24,14 +24,17 @@ fn FS::ConvertPath(qpath)
     return bpath;
 }
 
+fn FS::Sys::DummyOFStruct()
+{
+	static 128 ~ struct;
+	return struct;
+}
 
 fn FS::Sys::Open(path, mode)
 {
-	static 2 ~ ofstruct;
-
 	return OpenFile(
 		FS::ConvertPath(path),
-		ofstruct,
+		FS::Sys::DummyOFStruct(),
 		mode,
 	);
 }
