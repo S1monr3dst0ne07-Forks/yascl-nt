@@ -293,12 +293,14 @@ lab load_call;
 
         Ast::Expr::Load(param, ctx);
         IR::Emit(ctx, IR::Op::PUSH);
+        IR::Emit(ctx, IR::Op::RSP_DOWN, 8);
         jump push_loop;
     lab push_done;
 
     lab pop_loop;
         jump pop_done ~ i == 0;
         put i = i - 1;
+        IR::Emit(ctx, IR::Op::RSP_UP, 8);
         IR::Emit(ctx, IR::Op::STORE_QUICK, i);
         jump pop_loop;
     lab pop_done;
@@ -340,6 +342,7 @@ lab load_array;
     put value_count = Dyn::Size(value);
     IR::Emit(ctx, IR::Op::LOAD_STATIC, value_count);
     IR::Emit(ctx, IR::Op::PUSH);
+    IR::Emit(ctx, IR::Op::RSP_DOWN, 8);
 
     // load elements of array
     put vaddr = 0;
@@ -349,14 +352,22 @@ lab load_array;
 
         put elem = Dyn::Ptr(value).vaddr;
         Ast::Expr::Load(elem, ctx);
+
+    	// aww dude, this fucking sucks.
+    	// i just changed this to be 16-byte aligned,
+    	// and it's so inefficient!!! TODO: FIX THIS
+    	IR::Emit(ctx, IR::Op::RSP_UP, 8);
         IR::Emit(ctx, IR::Op::POP_AUX);
         IR::Emit(ctx, IR::Op::PUSH_AUX);
+    	IR::Emit(ctx, IR::Op::RSP_DOWN, 8);
+
         IR::Emit(ctx, IR::Op::OFFSET_STORE, addr);
 
         put vaddr = vaddr + 1;
         jump array_loop;
     lab array_done;
 
+    IR::Emit(ctx, IR::Op::RSP_UP, 8);
     IR::Emit(ctx, IR::Op::POP);
     jump done;
 

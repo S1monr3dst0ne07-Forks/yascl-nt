@@ -82,6 +82,8 @@ fn Ast::FnDef::Compile(node, ctx)
         IR::Emit(ctx, IR::Op::REF, name), // to   it's node
     );
 
+    // ASAN
+    IR::Emit(ctx, IR::Op::ASAN, name);
 
 	put params = node.Ast::FnDef::PARAMS;
 	put quick_params = Dyn::Create();

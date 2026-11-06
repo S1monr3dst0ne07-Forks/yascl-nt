@@ -77,6 +77,9 @@ seq IR::Op
 
     INDIRECT_STORE, // mov [rax], rbx
     OFFSET_STORE,   // mov [rbx + arg], rax
+
+    // --- debug stuff ---
+    ASAN, // address sanitize. check (rsp-8) % 16 == 0 and int3 if not.
 }
 
 seq IR::FloatOp
@@ -339,7 +342,28 @@ lab loop;
     jump asm_indirect_store ~ opcode == IR::Op::INDIRECT_STORE;
     jump asm_offset_store   ~ opcode == IR::Op::OFFSET_STORE;
 
+    jump asm_asan ~ opcode == IR::Op::ASAN;
+
     Error::PrintError("INTERNAL: Invalid IR opcode %d", [opcode]);
+
+lab asm_asan;
+	IR::Push8(ctx, 72); IR::Push8(ctx, 141); IR::Push8(ctx, 68); IR::Push8(ctx, 36); IR::Push8(ctx, 248); 
+	IR::Push8(ctx, 72); IR::Push8(ctx, 169); IR::Push8(ctx, 15); IR::Push8(ctx, 0); IR::Push8(ctx, 0); IR::Push8(ctx, 0); 
+	IR::Push8(ctx, 15); IR::Push8(ctx, 132); IR::Push8(ctx, 129); IR::Push8(ctx, 0); IR::Push8(ctx, 0); IR::Push8(ctx, 0); 
+	IR::Push8(ctx, 204);
+
+	put i = 0;
+	lab asm_asan_loop;
+		jump asm_asan_done ~ i == 128;
+
+		IR::Push8(ctx, arg.i);
+
+		put i = i + 1;
+		jump asm_asan_loop;
+	lab asm_asan_done;
+
+	jump loop;
+	 
 
 lab asm_ref;
     put iter.IR::Node::ADDR = IR::Addr(ctx);

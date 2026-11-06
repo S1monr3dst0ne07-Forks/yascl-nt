@@ -151,9 +151,11 @@ fn Ast::Expr::Load(node, ctx)
     jump only_leaf ~ (node.Ast::Expr::OP) == Ast::Expr::Op::NONE;
 
     Ast::Expr::Load(node.Ast::Expr::RIGHT, ctx);
-    IR::Emit(ctx, IR::Op::PUSH);
+	    IR::Emit(ctx, IR::Op::PUSH);
+	    IR::Emit(ctx, IR::Op::RSP_DOWN, 8);
     Ast::Leaf::Load(node.Ast::Expr::LEFT, ctx);
-    IR::Emit(ctx, IR::Op::POP_AUX); // pop into auxiliary register (rbx)
+	    IR::Emit(ctx, IR::Op::RSP_UP, 8);
+	    IR::Emit(ctx, IR::Op::POP_AUX);
 
     put op = node.Ast::Expr::OP;
     jump compile_add         ~ op == Ast::Expr::Op::ADD;
@@ -222,11 +224,15 @@ fn Ast::Expr::Store(node, ctx)
     jump error     ~ (node.Ast::Expr::OP) != Ast::Expr::Op::DOT;
 
     IR::Emit(ctx, IR::Op::PUSH);
+    	IR::Emit(ctx, IR::Op::RSP_DOWN, 8);
     Ast::Expr::Load(node.Ast::Expr::RIGHT, ctx);
     IR::Emit(ctx, IR::Op::PUSH);
+    	IR::Emit(ctx, IR::Op::RSP_DOWN, 8);
     Ast::Leaf::Load(node.Ast::Expr::LEFT,  ctx);
+    	IR::Emit(ctx, IR::Op::RSP_UP, 8);
     IR::Emit(ctx, IR::Op::POP_AUX);
     IR::Emit(ctx, IR::Op::DOUBLE_DOT);
+    	IR::Emit(ctx, IR::Op::RSP_UP, 8);
     IR::Emit(ctx, IR::Op::POP_AUX);
     IR::Emit(ctx, IR::Op::INDIRECT_STORE);
 

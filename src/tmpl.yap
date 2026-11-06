@@ -147,7 +147,6 @@ fn Tmpl::Header(ctx)
 	//	14:   5d                      pop    %rbp
 	//	15:   c3                      ret
 
-
 	IR::Push8(ctx, 85);
 	IR::PushREXW(ctx); IR::Push8(ctx, 137); IR::Push8(ctx, 229);
 	IR::PushREXW(ctx); IR::Push8(ctx, 131); IR::Push8(ctx, 236); IR::Push8(ctx, 32);
