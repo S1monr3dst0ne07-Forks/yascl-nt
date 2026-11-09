@@ -1,28 +1,89 @@
 
-use "lib/float.yap"
-use "lib/debug.yap"
-
-bind GetDC       ~ "USER32.DLL"
-bind ReleaseDC   ~ "USER32.DLL"
-bind ExitProcess ~ "KERNEL32.DLL"
-bind SetPixel    ~ "GDI32.DLL"
-
 apptype gui
 
-fn main()
+use "lib/float.yap"
+use "lib/debug.yap"
+use "lib/win.yap"
+
+bind SetPixel ~ "GDI32.DLL"
+
+seq Dims
 {
-	put dc = GetDC(0);
-
-	put width  = 800;
-	put height = 800;
-
-	mandel(dc, width, height);
-
-	ReleaseDC(0, dc);
-	ExitProcess(0);
+	WIDTH  = 800,
+	HEIGHT = 800,
 }
 
-fn color(idx)
+fn WndProc(hwnd, msg, wp, lp)
+{
+	jump destroy ~ msg == Win::MsgIden::DESTROY;
+	jump paint   ~ msg == Win::MsgIden::PAINT;
+
+	return DefWindowProcA(hwnd, msg, wp, lp);
+
+lab destroy;
+	PostQuitMessage(0);
+	return 0;
+lab paint;
+	static Win::Paint::Struct ~ ps;
+	static (Dims::WIDTH * Dims::HEIGHT) ~ frame_buffer;
+	put hdc = BeginPaint(hwnd, ps);
+	Mandel(hdc, Dims::WIDTH, Dims::HEIGHT);
+	EndPaint(hwnd, ps);
+}
+
+fn main()
+{	
+	put hinstance = GetModuleHandleA(Mem::NULL);
+	static Win::Class ~ wc;
+	
+	put (wc + Win::Class::lpfnWndProc)    .0 = @WndProc;
+	put (wc + Win::Class::hInstance)      .0 = hinstance;
+	put (wc + Win::Class::lpszClassName)  .0 = Win::Str("MAIN");
+	
+	RegisterClassA(wc);
+
+	put hwindow = CreateWindowExA(
+		0,
+		Win::Str("MAIN"),
+		Win::Str("My pretty window"),
+			Win::Style::OVERLAPPED |
+			Win::Style::CAPTION    |
+			Win::Style::SYSMENU,
+		Win::CreateWindow::USEDEFAULT,
+		Win::CreateWindow::USEDEFAULT,
+		Dims::WIDTH, Dims::HEIGHT,
+		Mem::NULL, Mem::NULL,
+		hinstance, Mem::NULL,
+	);
+	
+	ShowWindow(hwindow, Win::Show::SHOW);
+
+	static Win::MsgObj ~ msg;
+	lab loop;
+		put res = GetMessageA(msg, Mem::NULL, 0, 0);
+		jump done ~ res == 0;
+
+		TranslateMessage(msg);
+		DispatchMessageA(msg);
+	jump loop;
+
+
+lab done;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn Color(idx)
 {
 	put table = [
 		[66,  30,  15 ],
@@ -45,15 +106,15 @@ fn color(idx)
 	];
 
 	put entry = table.idx;
-	put color = 
-		((entry.2) << 16) | 
-		((entry.1) <<  8) |
-		((entry.0)      ) ;
 
-	return color;
+	return Win::Paint::RGB(
+		entry.0,
+		entry.1,
+		entry.2,
+	);
 }
 
-fn mandel(dc, iXmax, iYmax)
+fn Mandel(dc, iXmax, iYmax)
 {
     put zoom       = 2.0;
 
@@ -98,7 +159,7 @@ fn mandel(dc, iXmax, iYmax)
             put i = Iteration & 15;
             jump black ~ Iteration != IterationMax; put i = 16; lab black;
 
-            put col = color(i);
+            put col = Color(i);
             SetPixel(dc, iX, iY, col);
 
             put iX = iX + 1;

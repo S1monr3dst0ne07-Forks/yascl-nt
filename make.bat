@@ -1,2 +1,2 @@
-YASCL.EXE prg\win-test.yap
+YASCL.EXE prg\mandel-color.yap
 BUILD.EXE
