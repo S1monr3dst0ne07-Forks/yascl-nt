@@ -5,12 +5,48 @@ use "lib/float.yap"
 use "lib/debug.yap"
 use "lib/win.yap"
 
-bind SetPixel ~ "GDI32.DLL"
+bind SetDIBitsToDevice ~ "GDI32.DLL"
 
 seq Dims
 {
 	WIDTH  = 800,
 	HEIGHT = 800,
+}
+
+fn FrameBuffer()
+{
+	static (Dims::WIDTH * Dims::HEIGHT) ~ frame_buffer;
+	return frame_buffer;
+}
+
+fn BitMapInfo()
+{
+	static 128 ~ x;
+	jump done ~ x.0;
+
+	put (x +  0).0 = 40;
+	put (x +  4).0 = Dims::WIDTH;
+	put (x +  8).0 = Dims::HEIGHT;
+	put (x + 12).0 =  1;
+	put (x + 14).0 = 32;
+	put (x + 16	).0 =  0;
+
+lab done;
+	return x;
+}
+
+fn Paint(hdc)
+{
+	Mandel();
+	put fb = FrameBuffer();
+	put res = SetDIBitsToDevice(
+		hdc,
+		0, 0, Dims::WIDTH, Dims::HEIGHT,
+		0, 0, 0          , Dims::HEIGHT,
+		fb,
+		BitMapInfo(),
+		0,
+	);
 }
 
 fn WndProc(hwnd, msg, wp, lp)
@@ -25,9 +61,9 @@ lab destroy;
 	return 0;
 lab paint;
 	static Win::Paint::Struct ~ ps;
-	static (Dims::WIDTH * Dims::HEIGHT) ~ frame_buffer;
+
 	put hdc = BeginPaint(hwnd, ps);
-	Mandel(hdc, Dims::WIDTH, Dims::HEIGHT);
+	Paint(hdc);
 	EndPaint(hwnd, ps);
 }
 
@@ -45,7 +81,7 @@ fn main()
 	put hwindow = CreateWindowExA(
 		0,
 		Win::Str("MAIN"),
-		Win::Str("My pretty window"),
+		Win::Str("Mandelbrot -- Brought to you by YASCL-NT"),
 			Win::Style::OVERLAPPED |
 			Win::Style::CAPTION    |
 			Win::Style::SYSMENU,
@@ -70,14 +106,6 @@ fn main()
 
 lab done;
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -108,15 +136,19 @@ fn Color(idx)
 	put entry = table.idx;
 
 	return Win::Paint::RGB(
-		entry.0,
-		entry.1,
 		entry.2,
+		entry.1,
+		entry.0,
 	);
 }
 
-fn Mandel(dc, iXmax, iYmax)
+fn Mandel()
 {
     put zoom       = 2.0;
+
+	put iXmax = Dims::WIDTH;
+	put iYmax = Dims::HEIGHT;
+	put fb    = FrameBuffer();
 
     put CxMin = ((0.0) ~- (2.5)) ~/ zoom;
     put CxMax = (         (1.5)) ~/ zoom;
@@ -159,8 +191,9 @@ fn Mandel(dc, iXmax, iYmax)
             put i = Iteration & 15;
             jump black ~ Iteration != IterationMax; put i = 16; lab black;
 
-            put col = Color(i);
-            SetPixel(dc, iX, iY, col);
+		put col = Color(i);
+		put i = 4 * (iX + (iY * iYmax));
+		put (fb + i).0 = col;
 
             put iX = iX + 1;
         jump x_loop ~ iX < iXmax;
