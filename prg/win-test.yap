@@ -3,6 +3,7 @@ use "lib/mem.yap"
 use "lib/debug.yap"
 use "lib/win.yap"
 
+bind SetPixel ~ "GDI32.DLL"
 
 fn Paint(hwnd)
 {
@@ -40,14 +41,6 @@ lab paint;
 	return 0;
 }
 
-fn str(q)
-{
-    put len = Str::Len(q);
-    put b = Chunk::New(len);
-    Mem::ToBytes(b, q, len);
-    return b;
-}
-
 fn main()
 {
     put instance = GetModuleHandleA(Mem::NULL);
@@ -55,14 +48,14 @@ fn main()
 
     put (wc + Win::Class::lpfnWndProc)    .0 = @WndProc;
     put (wc + Win::Class::hInstance)      .0 = instance;
-    put (wc + Win::Class::lpszClassName)  .0 = str("MAIN");
+    put (wc + Win::Class::lpszClassName)  .0 = Win::Str("MAIN");
     
     RegisterClassA(wc);
 
     put handle = CreateWindowExA(
         0,
-        str("MAIN"),
-        str("My pretty window"),
+        Win::Str("MAIN"),
+        Win::Str("My pretty window"),
         	Win::Style::OVERLAPPED |
 		Win::Style::CAPTION |
 		Win::Style::SYSMENU,

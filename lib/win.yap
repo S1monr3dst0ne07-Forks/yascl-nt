@@ -14,7 +14,6 @@ bind DispatchMessageA ~ "USER32.DLL"
 bind PostQuitMessage  ~ "USER32.DLL"
 bind BeginPaint       ~ "USER32.DLL"
 bind EndPaint         ~ "USER32.DLL"
-bind SetPixel         ~ "GDI32.DLL"
 
 
 fn Win::ReadFile(handle, buffer, len)
@@ -30,6 +29,13 @@ fn Win::WriteFile(handle, buffer, len)
     return nbytes.0;
 }
 
+fn Win::Str(q)
+{
+    put len = Str::Len(q);
+    put b = Chunk::New(len);
+    Mem::ToBytes(b, q, len);
+    return b;
+}
 
 
 
