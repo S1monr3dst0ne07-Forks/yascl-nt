@@ -14,6 +14,8 @@ bind DispatchMessageA ~ "USER32.DLL"
 bind PostQuitMessage  ~ "USER32.DLL"
 bind BeginPaint       ~ "USER32.DLL"
 bind EndPaint         ~ "USER32.DLL"
+bind SetTimer         ~ "USER32.DLL"
+bind InvalidateRect   ~ "USER32.DLL"
 
 
 fn Win::ReadFile(handle, buffer, len)
@@ -90,8 +92,9 @@ seq Win::MsgIden
 {
 	CREATE   = 1,
 	DESTROY  = 2,
-	PAINT = 15,
+	PAINT    = 15,
 	NCCREATE = 129,
+        TIMER    = 275,
 }
 
 
