@@ -9,8 +9,8 @@ bind SetDIBitsToDevice ~ "GDI32.DLL"
 
 seq Dims
 {
-	WIDTH  = 800,
-	HEIGHT = 800,
+	WIDTH  = 920,
+	HEIGHT = 720,
 }
 
 fn FrameBuffer()
@@ -144,16 +144,14 @@ fn Color(idx)
 
 fn Mandel()
 {
-    put zoom       = 2.0;
-
 	put iXmax = Dims::WIDTH;
 	put iYmax = Dims::HEIGHT;
 	put fb    = FrameBuffer();
 
-    put CxMin = ((0.0) ~- (2.5)) ~/ zoom;
-    put CxMax = (         (1.5)) ~/ zoom;
-    put CyMin = ((0.0) ~- (2.0)) ~/ zoom;
-    put CyMax = (         (2.0)) ~/ zoom;
+    put CxMin = (0.0) ~- (2.2);
+    put CxMax =          (0.8);
+    put CyMin = (0.0) ~- (1.2);
+    put CyMax =          (1.2);
 
     put PixelHeight  = 0;
     put PixelWidth  = (CxMax ~- CxMin) ~/ Float::FromInt(iXmax);
@@ -192,7 +190,7 @@ fn Mandel()
             jump black ~ Iteration != IterationMax; put i = 16; lab black;
 
 		put col = Color(i);
-		put i = 4 * (iX + (iY * iYmax));
+		put i = 4 * (iX + (iY * iXmax));
 		put (fb + i).0 = col;
 
             put iX = iX + 1;
