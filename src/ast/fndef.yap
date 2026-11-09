@@ -83,12 +83,18 @@ fn Ast::FnDef::Compile(node, ctx)
     );
 
     // ASAN
-    IR::Emit(ctx, IR::Op::ASAN, name);
+    //IR::Emit(ctx, IR::Op::ASAN, name);
 
 	put params = node.Ast::FnDef::PARAMS;
 	put quick_params = Dyn::Create();
 	put stack_params = Dyn::Create();
 	Utils::SliceParameters(params, quick_params, stack_params);
+
+	// set new base pointer
+	//  this has to happen after loading the parameters
+	//  to allow them to access the local variables of the caller frame.
+	put space = 8 + 32 + (8 * Dyn::Size(stack_params));
+    IR::Emit(ctx, IR::Op::UPDATE_RBP, space);
 	
 	// this code right here is very tricky.
 	// the windows calling conventions make it

@@ -305,10 +305,6 @@ lab load_call;
         jump pop_loop;
     lab pop_done;
 
-    // set new base pointer
-    //  this has to happen after loading the parameters
-    //  to allow them to access the local variables of the caller frame.
-    IR::Emit(ctx, IR::Op::UPDATE_RBP, space);
 
 	// actual call
 	jump external ~ HT::Has(ctx.Ctx::Global::BINDS, name);
