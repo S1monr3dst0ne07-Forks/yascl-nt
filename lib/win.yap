@@ -11,6 +11,10 @@ bind ShowWindow       ~ "USER32.DLL"
 bind GetMessageA      ~ "USER32.DLL"
 bind TranslateMessage ~ "USER32.DLL"
 bind DispatchMessageA ~ "USER32.DLL"
+bind PostQuitMessage  ~ "USER32.DLL"
+bind BeginPaint       ~ "USER32.DLL"
+bind EndPaint         ~ "USER32.DLL"
+bind SetPixel         ~ "GDI32.DLL"
 
 
 fn Win::ReadFile(handle, buffer, len)
@@ -32,32 +36,34 @@ fn Win::WriteFile(handle, buffer, len)
 
 seq Win::Style
 {
-    OVERLAPPED = 0,
+	OVERLAPPED = 0,
+	CAPTION    = 12582912,
+	SYSMENU    = 524288,
 }
 seq Win::CreateWindow
 {
-    USEDEFAULT = 2147483648,
+	USEDEFAULT = 2147483648,
 }
 seq Win::Show
 {
-    SHOW = 5,
+	SHOW = 5,
 }
 
 seq Win::Class
 {
-    cbSize        =  0,
-    style         =  4,
-    lpfnWndProc   =  8,
-    cbClsExtra    = 16,
-    cbWndExtra    = 20,
-    hInstance     = 24,
-    hIcon         = 32,
-    hCursor       = 40,
-    hbrBackground = 48,
-    lpszMenuName  = 56,
-    lpszClassName = 64,
-    hIconSm       = 72,
-    __last        = 80,
+	cbSize        =  0,
+	style         =  4,
+	lpfnWndProc   =  8,
+	cbClsExtra    = 16,
+	cbWndExtra    = 20,
+	hInstance     = 24,
+	hIcon         = 32,
+	hCursor       = 40,
+	hbrBackground = 48,
+	lpszMenuName  = 56,
+	lpszClassName = 64,
+	hIconSm       = 72,
+	__last        = 80,
 }
 
 
@@ -76,7 +82,22 @@ seq Win::MsgObj
 
 seq Win::MsgIden
 {
-    CREATE  = 1,
-    DESTROY = 2,
+	CREATE   = 1,
+	DESTROY  = 2,
+	PAINT = 15,
+	NCCREATE = 129,
+}
+
+
+seq Win::Paint::Struct
+{
+	__last = 64,
+}
+
+fn Win::Paint::RGB(r, g, b)
+{
+	return  (r << 0 ) |
+		(g << 8 ) |
+		(b << 16) ;
 }
 

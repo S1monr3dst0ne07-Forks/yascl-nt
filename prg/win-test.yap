@@ -4,9 +4,40 @@ use "lib/debug.yap"
 use "lib/win.yap"
 
 
+fn Paint(hwnd)
+{
+	static Win::Paint::Struct ~ ps;
+	put hdc = BeginPaint(hwnd, ps);
+
+	put i = 0;
+	lab loop;
+		put x =  i       & 255;
+		put y = (i >> 8) & 255;
+		
+		SetPixel(hdc, x, y, Win::Paint::RGB(255, 0, 0));
+
+		put i = i + 1;
+	jump loop ~ i < 65535;
+
+	EndPaint(hwnd, ps);
+}
+
+
+
 fn WndProc(hwnd, msg, wp, lp)
 {
-    return DefWindowProcA(hwnd, msg, wp, lp);
+	jump destroy ~ msg == Win::MsgIden::DESTROY;
+	jump paint   ~ msg == Win::MsgIden::PAINT;
+
+	return DefWindowProcA(hwnd, msg, wp, lp);
+
+lab destroy;
+	PostQuitMessage(0);
+	return 0;
+
+lab paint;
+	Paint(hwnd);
+	return 0;
 }
 
 fn str(q)
@@ -32,7 +63,9 @@ fn main()
         0,
         str("MAIN"),
         str("My pretty window"),
-        Win::Style::OVERLAPPED,
+        	Win::Style::OVERLAPPED |
+		Win::Style::CAPTION |
+		Win::Style::SYSMENU,
         Win::CreateWindow::USEDEFAULT,
         Win::CreateWindow::USEDEFAULT,
         640, 480, 
