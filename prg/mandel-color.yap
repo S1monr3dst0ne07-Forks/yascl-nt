@@ -29,7 +29,7 @@ fn BitMapInfo()
 	put (x +  8).0 = Dims::HEIGHT;
 	put (x + 12).0 =  1;
 	put (x + 14).0 = 32;
-	put (x + 16	).0 =  0;
+	put (x + 16).0 =  0;
 
 lab done;
 	return x;
